@@ -19,6 +19,9 @@ import SubjectForm from "./Admin/components/SubjectForm";
 import QuestionList from "./Admin/components/QuestionList";
 import QuestionForm from "./Admin/components/QuestionForm";
 
+// Protected Route component
+import ProtectedRoute from "./components/ProtectedRoute";
+
 function App() {
   return (
     <Routes>
@@ -28,18 +31,58 @@ function App() {
       <Route path="/signup" element={<AuthPage type="signup" />} />
       <Route path="/otp-verify" element={<OtpVerify />} />
       <Route path="/complete-profile" element={<CompleteProfile />} />
-      <Route path="/dashboard" element={<Dashboard />} />
-      <Route path="/flashcard" element={<Flashcard />} />
-      <Route path="/streaks" element={<Streaks />} />
+      <Route path="/dashboard" element={
+        <ProtectedRoute>
+          <Dashboard />
+        </ProtectedRoute>
+      } />
+      <Route path="/flashcard" element={
+        <ProtectedRoute>
+          <Flashcard />
+        </ProtectedRoute>
+      } />
+      <Route path="/streaks" element={
+        <ProtectedRoute>
+          <Streaks />
+        </ProtectedRoute>
+      } />
 
       {/* Admin routes */}
-      <Route path="/admin" element={<AdminDashboard />} />
-      <Route path="/admin/subjects" element={<SubjectList />} />
-      <Route path="/admin/subjects/add" element={<SubjectForm />} />
-      <Route path="/admin/subjects/edit/:subjectId" element={<SubjectForm />} />
-      <Route path="/admin/subjects/:id/questions" element={<QuestionList />} />
-      <Route path="/admin/subjects/:id/questions/add" element={<QuestionForm />} />
-      <Route path="/admin/subjects/:id/questions/edit/:qid" element={<QuestionForm />} />
+      <Route path="/admin" element={
+        <ProtectedRoute requiredRole="admin">
+          <AdminDashboard />
+        </ProtectedRoute>
+      } />
+      <Route path="/admin/subjects" element={
+        <ProtectedRoute requiredRole="admin">
+          <SubjectList />
+        </ProtectedRoute>
+      } />
+      <Route path="/admin/subjects/add" element={
+        <ProtectedRoute requiredRole="admin">
+          <SubjectForm />
+        </ProtectedRoute>
+      } />
+      <Route path="/admin/subjects/edit/:subjectId" element={
+        <ProtectedRoute requiredRole="admin">
+          <SubjectForm />
+        </ProtectedRoute>
+      } />
+      <Route path="/admin/subjects/:id/questions" element={
+        <ProtectedRoute requiredRole="admin">
+          <QuestionList />
+        </ProtectedRoute>
+      } />
+      <Route path="/admin/subjects/:id/questions/add" element={
+        <ProtectedRoute requiredRole="admin">
+          <QuestionForm />
+        </ProtectedRoute>
+      } />
+      <Route path="/admin/subjects/:id/questions/edit/:qid" element={
+        <ProtectedRoute requiredRole="admin">
+          <QuestionForm />
+        </ProtectedRoute>
+      } />
     </Routes>
   );
 }

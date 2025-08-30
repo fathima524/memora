@@ -6,33 +6,58 @@ import { useNavigate } from 'react-router-dom';
 export default function Login() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
 
   // Handle email login
   const handleLogin = async () => {
+    if (!email || !password) {
+      alert('Please fill in all fields');
+      return;
+    }
+
+    setLoading(true);
     const { data, error } = await loginWithEmail(email, password);
-    if (error) alert(error.message);
-    else redirectUser(data.user.id);
+    if (error) {
+      alert(error.message);
+    } else {
+      redirectUser(data.user.id);
+    }
+    setLoading(false);
   };
 
   // Handle Google login
   const handleGoogleLogin = async () => {
+    setLoading(true);
     const { error } = await signInWithGoogle();
-    if (error) alert(error.message);
+    if (error) {
+      alert(error.message);
+      setLoading(false);
+    }
   };
 
   // Redirect user based on role
   const redirectUser = async (userId) => {
-    const { data } = await supabase.from('profiles').select('role').eq('id', userId).single();
-    if (data?.role === 'admin') navigate('/dashboard'); // admin dashboard route
-    else navigate('/dashboard'); // student dashboard route
+    const { data } = await supabase
+      .from('profiles')
+      .select('role')
+      .eq('id', userId)
+      .single();
+    
+    if (data?.role === 'admin') {
+      navigate('/admin');
+    } else {
+      navigate('/dashboard');
+    }
   };
 
   // Auto-login if session exists
   useEffect(() => {
     const checkUser = async () => {
       const { data } = await supabase.auth.getSession();
-      if (data.session) redirectUser(data.session.user.id);
+      if (data.session) {
+        redirectUser(data.session.user.id);
+      }
     };
     checkUser();
   }, []);
@@ -59,8 +84,12 @@ export default function Login() {
             className="login-input"
           />
           <button onClick={handleLogin} className="login-button">Login</button>
-          <button onClick={handleGoogleLogin} className="login-button">Login with Google</button>
-          <button onClick={logout} className="login-button">Logout</button>
+          <button onClick={handleLogin} className="login-button">
+            {loading ? 'Logging in...' : 'Login'}
+          </button>
+          <button onClick={handleGoogleLogin} className="login-button">
+            {loading ? 'Please wait...' : 'Login with Google'}
+          </button>
         </div>
       </div>
 
