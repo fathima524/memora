@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "../supabase/supabaseClient";
 
@@ -6,8 +6,36 @@ export default function CompleteProfile() {
   const [name, setName] = useState('');
   const [year, setYear] = useState('');
   const [loading, setLoading] = useState(false);
+  const [user, setUser] = useState(null);
 
   const navigate = useNavigate();
+
+  useEffect(() => {
+    const checkUser = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        navigate('/login');
+        return;
+      }
+      setUser(session.user);
+
+      // Check if profile is already completed
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('profile_completed, full_name, year_of_study')
+        .eq('id', session.user.id)
+        .single();
+
+      if (profile?.profile_completed) {
+        navigate('/dashboard');
+      } else if (profile?.full_name) {
+        setName(profile.full_name);
+        setYear(profile.year_of_study || '');
+      }
+    };
+
+    checkUser();
+  }, [navigate]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -16,9 +44,6 @@ export default function CompleteProfile() {
       setLoading(true);
       
       try {
-        // Get current user
-        const { data: { user } } = await supabase.auth.getUser();
-        
         if (user) {
           // Update user profile in Supabase
           const { error } = await supabase
@@ -41,8 +66,18 @@ export default function CompleteProfile() {
           localStorage.setItem("userName", name.trim());
           localStorage.setItem("userYear", year);
 
-          // Navigate to Dashboard
-          navigate("/dashboard");
+          // Check user role and navigate accordingly
+          const { data: profile } = await supabase
+            .from('profiles')
+            .select('role')
+            .eq('id', user.id)
+            .single();
+
+          if (profile?.role === 'admin') {
+            navigate("/admin");
+          } else {
+            navigate("/dashboard");
+          }
         }
       } catch (error) {
         console.error('Profile completion error:', error);
@@ -203,6 +238,12 @@ export default function CompleteProfile() {
 
         .profile-button:active {
           transform: translateY(0);
+        }
+
+        .profile-button:disabled {
+          opacity: 0.6;
+          cursor: not-allowed;
+          transform: none;
         }
 
         @media (max-width: 768px) {

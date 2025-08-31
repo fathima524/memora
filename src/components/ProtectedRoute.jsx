@@ -20,27 +20,31 @@ const ProtectedRoute = ({ children, requiredRole = null }) => {
 
         setUser(session.user);
 
-        // Get user role if required
-        if (requiredRole) {
-          const { data: profile, error } = await supabase
-            .from('profiles')
-            .select('role')
-            .eq('id', session.user.id)
-            .single();
+        // Get user profile
+        const { data: profile, error } = await supabase
+          .from('profiles')
+          .select('role, profile_completed')
+          .eq('id', session.user.id)
+          .single();
 
-          if (error) {
-            console.error('Error fetching user profile:', error);
-            navigate('/login');
-            return;
-          }
+        if (error) {
+          console.error('Error fetching user profile:', error);
+          navigate('/complete-profile');
+          return;
+        }
 
-          setUserRole(profile.role);
+        // Check if profile is completed
+        if (!profile.profile_completed) {
+          navigate('/complete-profile');
+          return;
+        }
 
-          // Check if user has required role
-          if (profile.role !== requiredRole) {
-            navigate('/dashboard'); // Redirect to appropriate dashboard
-            return;
-          }
+        setUserRole(profile.role);
+
+        // Check if user has required role
+        if (requiredRole && profile.role !== requiredRole) {
+          navigate('/dashboard');
+          return;
         }
 
         setLoading(false);
