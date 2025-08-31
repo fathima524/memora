@@ -1,33 +1,63 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { loginWithEmail, signUpWithEmail, signInWithGoogle, logout } from '../supabase/auth';
+import { supabase } from '../supabase/supabaseClient';
 
 export default function AuthPage({ type = 'login' }) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [role, setRole] = useState('student');
+  const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
 
   const isLogin = type === 'login';
 
   const handleSubmit = async () => {
+    if (!email || !password) {
+      alert('Please fill in all fields');
+      return;
+    }
+
+    setLoading(true);
+    
     if (isLogin) {
       const { data, error } = await loginWithEmail(email, password);
-      if (error) alert(error.message);
-      else navigate('/dashboard'); // redirect to dashboard after login
+      if (error) {
+        alert(error.message);
+      } else {
+        // Check user role and redirect accordingly
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('role')
+          .eq('id', data.user.id)
+          .single();
+        
+        if (profile?.role === 'admin') {
+          navigate('/admin');
+        } else {
+          navigate('/dashboard');
+        }
+      }
     } else {
       const { data, error } = await signUpWithEmail(email, password, role);
-      if (error) alert(error.message);
-      else {
+      if (error) {
+        alert(error.message);
+      } else {
         alert('Check your email for verification!');
         navigate('/login');
       }
     }
+    
+    setLoading(false);
   };
 
   const handleGoogleLogin = async () => {
+    setLoading(true);
     const { error } = await signInWithGoogle();
-    if (error) alert(error.message);
+    if (error) {
+      alert(error.message);
+      setLoading(false);
+    }
   };
 
   return (
@@ -65,11 +95,11 @@ export default function AuthPage({ type = 'login' }) {
           )}
 
           <button onClick={handleSubmit} className="auth-button">
-            {isLogin ? 'Login' : 'Sign Up'}
+            {loading ? 'Please wait...' : (isLogin ? 'Login' : 'Sign Up')}
           </button>
 
           <button onClick={handleGoogleLogin} className="auth-button google">
-            {isLogin ? 'Login' : 'Sign Up'} with Google
+            {loading ? 'Please wait...' : `${isLogin ? 'Login' : 'Sign Up'} with Google`}
           </button>
 
           <p className="switch-text">

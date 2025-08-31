@@ -1,24 +1,55 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { supabase } from "../supabase/supabaseClient";
 
 export default function CompleteProfile() {
   const [name, setName] = useState('');
   const [year, setYear] = useState('');
+  const [loading, setLoading] = useState(false);
 
   const navigate = useNavigate();
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
 
     if (name.trim() && year) {
-      console.log('Profile saved:', { name, year });
+      setLoading(true);
+      
+      try {
+        // Get current user
+        const { data: { user } } = await supabase.auth.getUser();
+        
+        if (user) {
+          // Update user profile in Supabase
+          const { error } = await supabase
+            .from('profiles')
+            .update({
+              full_name: name.trim(),
+              year_of_study: year,
+              profile_completed: true
+            })
+            .eq('id', user.id);
 
-      // Save user name to localStorage
-      localStorage.setItem("userName", name.trim());
-      localStorage.setItem("userYear", year);
+          if (error) {
+            console.error('Error updating profile:', error);
+            alert('Error saving profile. Please try again.');
+            setLoading(false);
+            return;
+          }
 
-      // Navigate to Dashboard
-      navigate("/dashboard");
+          // Save user name to localStorage for quick access
+          localStorage.setItem("userName", name.trim());
+          localStorage.setItem("userYear", year);
+
+          // Navigate to Dashboard
+          navigate("/dashboard");
+        }
+      } catch (error) {
+        console.error('Profile completion error:', error);
+        alert('Error saving profile. Please try again.');
+      }
+      
+      setLoading(false);
     } else {
       alert("Please complete all fields!");
     }
@@ -57,8 +88,9 @@ export default function CompleteProfile() {
               type="button"
               className="profile-button"
               onClick={handleSubmit}
+              disabled={loading}
             >
-              Save Profile
+              {loading ? 'Saving...' : 'Save Profile'}
             </button>
           </div>
         </div>

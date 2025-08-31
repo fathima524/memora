@@ -33,7 +33,7 @@ export const signInWithGoogle = async () => {
   return await supabase.auth.signInWithOAuth({
     provider: 'google',
     options: {
-      redirectTo: 'http://localhost:3000/dashboard' // change for production
+      redirectTo: `${window.location.origin}/dashboard`
     }
   });
 };

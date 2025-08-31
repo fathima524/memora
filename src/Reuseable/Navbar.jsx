@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { logout } from '../supabase/auth';
 
 export default function Navbar() {
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
@@ -15,8 +16,10 @@ export default function Navbar() {
   };
 
   const handleLogout = () => {
-    localStorage.clear();
-    navigate('/');
+    logout().then(() => {
+      localStorage.clear();
+      navigate('/');
+    });
     setIsDropdownOpen(false);
   };
 
