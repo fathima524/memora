@@ -3,7 +3,6 @@ import { Routes, Route } from "react-router-dom";
 // User-facing components
 import Welcome from "./Entry/Welcome";
 import AuthPage from "./Entry/AuthPage";
-import Login from "./Entry/Login";
 import OtpVerify from "./Entry/Otp-verify";
 import CompleteProfile from "./Entry/Complete-profile";
 import Navbar from "./Reuseable/Navbar";
