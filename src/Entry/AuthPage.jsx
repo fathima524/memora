@@ -20,32 +20,42 @@ export default function AuthPage({ type = 'login' }) {
 
     setLoading(true);
     
-    if (isLogin) {
-      const { data, error } = await loginWithEmail(email, password);
-      if (error) {
-        alert(error.message);
-      } else {
-        // Check user role and redirect accordingly
-        const { data: profile } = await supabase
-          .from('profiles')
-          .select('role')
-          .eq('id', data.user.id)
-          .single();
-        
-        if (profile?.role === 'admin') {
-          navigate('/admin');
+    try {
+      if (isLogin) {
+        const { data, error } = await loginWithEmail(email, password);
+        if (error) {
+          alert(error.message);
         } else {
-          navigate('/dashboard');
+          // Check user role and redirect accordingly
+          const { data: profile, error: profileError } = await supabase
+            .from('profiles')
+            .select('role, profile_completed')
+            .eq('id', data.user.id)
+            .single();
+          
+          if (profileError) {
+            console.error('Error fetching profile:', profileError);
+            navigate('/complete-profile');
+          } else if (!profile.profile_completed) {
+            navigate('/complete-profile');
+          } else if (profile?.role === 'admin') {
+            navigate('/admin');
+          } else {
+            navigate('/dashboard');
+          }
+        }
+      } else {
+        const { data, error } = await signUpWithEmail(email, password, role);
+        if (error) {
+          alert(error.message);
+        } else {
+          alert('Account created successfully! Please check your email for verification.');
+          navigate('/login');
         }
       }
-    } else {
-      const { data, error } = await signUpWithEmail(email, password, role);
-      if (error) {
-        alert(error.message);
-      } else {
-        alert('Check your email for verification!');
-        navigate('/login');
-      }
+    } catch (error) {
+      console.error('Authentication error:', error);
+      alert('An error occurred. Please try again.');
     }
     
     setLoading(false);
@@ -53,9 +63,16 @@ export default function AuthPage({ type = 'login' }) {
 
   const handleGoogleLogin = async () => {
     setLoading(true);
-    const { error } = await signInWithGoogle();
-    if (error) {
-      alert(error.message);
+    try {
+      const { error } = await signInWithGoogle();
+      if (error) {
+        alert(error.message);
+        setLoading(false);
+      }
+      // Note: Google login will redirect automatically, so we don't set loading to false here
+    } catch (error) {
+      console.error('Google login error:', error);
+      alert('Google login failed. Please try again.');
       setLoading(false);
     }
   };

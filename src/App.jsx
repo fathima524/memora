@@ -1,7 +1,7 @@
 import { Routes, Route } from "react-router-dom";
 
 // User-facing components
-import Welcome from "./Entry/Welcome";
+import Welcome from "./Entry/Welcome"
 import AuthPage from "./Entry/AuthPage";
 import Login from "./Entry/Login";
 import OtpVerify from "./Entry/Otp-verify";
@@ -29,7 +29,6 @@ function App() {
       <Route path="/" element={<Welcome />} />
       <Route path="/login" element={<AuthPage type="login" />} />
       <Route path="/signup" element={<AuthPage type="signup" />} />
-      <Route path="/otp-verify" element={<OtpVerify />} />
       <Route path="/complete-profile" element={<CompleteProfile />} />
       <Route path="/dashboard" element={
         <ProtectedRoute>

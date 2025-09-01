@@ -10,45 +10,80 @@ const ProtectedRoute = ({ children, requiredRole = null }) => {
 
   useEffect(() => {
     const checkAuth = async () => {
-      try {
-        const { data: { session } } = await supabase.auth.getSession();
-        
-        if (!session) {
-          navigate('/login');
-          return;
-        }
+  try {
+    const { data: { session } } = await supabase.auth.getSession();
 
-        setUser(session.user);
+    if (!session) {
+      navigate('/login');
+      return;
+    }
 
-        // Get user role if required
-        if (requiredRole) {
-          const { data: profile, error } = await supabase
-            .from('profiles')
-            .select('role')
-            .eq('id', session.user.id)
-            .single();
+    setUser(session.user);
 
-          if (error) {
-            console.error('Error fetching user profile:', error);
-            navigate('/login');
-            return;
-          }
+    // Try to fetch profile
+    // Try to fetch profile
+let profile;
+try {
+  const { data, error } = await supabase
+    .from('profiles')
+    .select('role, profile_completed')
+    .eq('id', session.user.id)
+    .maybeSingle();
 
-          setUserRole(profile.role);
+  if (error) throw error;
 
-          // Check if user has required role
-          if (profile.role !== requiredRole) {
-            navigate('/dashboard'); // Redirect to appropriate dashboard
-            return;
-          }
-        }
+  profile = data;
+} catch (err) {
+  console.error('Error fetching profile:', err);
+  profile = null;
+}
 
-        setLoading(false);
-      } catch (error) {
-        console.error('Auth check error:', error);
-        navigate('/login');
-      }
-    };
+
+// If no profile exists, create one
+if (!profile) {
+  const { data: newProfile, error: insertError } = await supabase
+    .from('profiles')
+    .insert({
+      id: session.user.id,
+      full_name: session.user.user_metadata?.full_name || "",
+      profile_completed: false,
+      role: "student" // default role
+    })
+    .select()
+    .single();
+
+  if (insertError) {
+    console.error('Error creating profile:', insertError);
+    navigate('/login');
+    return;
+  }
+
+  profile = newProfile;
+}
+
+
+    // If profile is not completed, redirect
+    if (!profile.profile_completed) {
+      navigate('/complete-profile');
+      return;
+    }
+
+    setUserRole(profile.role);
+
+    // Check required role
+    if (requiredRole && profile.role !== requiredRole) {
+      navigate('/dashboard');
+      return;
+    }
+
+    setLoading(false);
+
+  } catch (error) {
+    console.error('Auth check error:', error);
+    navigate('/login');
+  }
+};
+
 
     checkAuth();
 

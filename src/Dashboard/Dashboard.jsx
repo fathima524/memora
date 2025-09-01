@@ -3,6 +3,8 @@ import { useNavigate } from "react-router-dom";
 import Navbar from "../Reuseable/Navbar";
 import Footer from "../Reuseable/Footer";
 import subjectsData from "../data/subjects.json";
+import { supabase } from "../supabase/supabaseClient";
+
 
 function Dashboard() {
   const navigate = useNavigate();
@@ -14,26 +16,79 @@ function Dashboard() {
   const [recentActivity, setRecentActivity] = useState([]);
   const [subscriptionStatus, setSubscriptionStatus] = useState("Free");
 
-  useEffect(() => {
-    // Get user data from localStorage
-    const storedName = localStorage.getItem("userName");
+useEffect(() => {
+  const fetchProfile = async () => {
+    // Get the currently logged-in user
+    const { data: { user }, error: userError } = await supabase.auth.getUser();
+
+    if (userError) {
+      console.log("Error getting user:", userError);
+      return;
+    }
+
+    if (!user) {
+      // fallback to localStorage if no user
+      const storedName = localStorage.getItem("userName");
+      if (storedName) setUserName(storedName);
+      return;
+    }
+
+    // Check if profile already exists
+    const { data: existingProfile, error: profileError } = await supabase
+      .from("profiles")
+      .select("id, full_name")
+      .eq("id", user.id)
+      .single();
+
+    if (profileError && profileError.code !== "PGRST116") {
+      console.log("Error checking profile:", profileError);
+    }
+
+    // If profile doesn't exist, create one
+    if (!existingProfile) {
+      await supabase.from("profiles").insert({
+        id: user.id,
+        full_name: user.user_metadata?.full_name || "",
+        profile_completed: false
+      });
+    }
+
+    // Fetch profile again (or use existing one)
+    const { data: profile, error: fetchError } = await supabase
+      .from("profiles")
+      .select("full_name, profile_completed")
+      .eq("id", user.id)
+      .single();
+
+    if (fetchError) {
+      console.log("Error fetching profile:", fetchError);
+    } else {
+      setUserName(profile.full_name || "Student");
+      localStorage.setItem("userName", profile.full_name || "Student");
+    }
+
+    // Load other localStorage data
     const storedStreak = localStorage.getItem("currentStreak");
     const storedQuestions = localStorage.getItem("questionsToday");
     const storedSubscription = localStorage.getItem("subscriptionStatus");
-    
-    if (storedName) setUserName(storedName);
+
     if (storedStreak) setStreak(parseInt(storedStreak));
     if (storedQuestions) setQuestionsToday(parseInt(storedQuestions));
     if (storedSubscription) setSubscriptionStatus(storedSubscription);
 
-    // Load recent activity
     const activity = JSON.parse(localStorage.getItem("recentActivity")) || [
       { subject: "Anatomy", score: "8/10", time: "2 hours ago" },
       { subject: "Physiology", score: "9/10", time: "Yesterday" },
       { subject: "Biochemistry", score: "7/10", time: "2 days ago" }
     ];
     setRecentActivity(activity);
-  }, []);
+  };
+
+  fetchProfile();
+}, []);
+
+
+
 
   const handleStartStudy = () => {
     if (!selectedSubject) {
