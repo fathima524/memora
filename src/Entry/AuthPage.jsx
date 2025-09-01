@@ -24,7 +24,14 @@ export default function AuthPage({ type = 'login' }) {
       if (isLogin) {
         const { data, error } = await loginWithEmail(email, password);
         if (error) {
-          alert(error.message);
+          console.error('Login error details:', error);
+          if (error.message.includes('Email not confirmed')) {
+            alert('Please verify your email address before logging in. Check your email (including spam folder) for the verification link.');
+          } else if (error.message.includes('Invalid login credentials')) {
+            alert('Invalid email or password. Please check your credentials and try again.');
+          } else {
+            alert(`Login failed: ${error.message}`);
+          }
         } else {
           // Check user role and redirect accordingly
           const { data: profile, error: profileError } = await supabase
@@ -47,10 +54,22 @@ export default function AuthPage({ type = 'login' }) {
       } else {
         const { data, error } = await signUpWithEmail(email, password, role);
         if (error) {
-          alert(error.message);
-        } else {
-          alert('Account created successfully! Please check your email for verification.');
-          navigate('/login');
+          console.error('Signup error details:', error);
+          if (error.message.includes('Email not confirmed')) {
+            alert('Please check your email and click the confirmation link to verify your account.');
+          } else if (error.message.includes('User already registered')) {
+            alert('An account with this email already exists. Please try logging in instead.');
+          } else {
+            alert(`Signup failed: ${error.message}`);
+          }
+        } else if (data?.user) {
+          if (data.user.email_confirmed_at) {
+            alert('Account created successfully! You can now log in.');
+            navigate('/login');
+          } else {
+            alert('Account created! Please check your email (including spam folder) for a verification link. You must verify your email before logging in.');
+            navigate('/login');
+          }
         }
       }
     } catch (error) {

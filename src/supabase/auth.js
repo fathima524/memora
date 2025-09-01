@@ -2,27 +2,42 @@ import { supabase } from './supabaseClient';
 
 // Sign up
 export const signUpWithEmail = async (email, password, role) => {
-  const { data, error } = await supabase.auth.signUp({
-    email,
-    password,
-    options: {
-      emailRedirectTo: `${window.location.origin}/complete-profile`
-    }
-  });
-
-  if (data?.user && !error) {
-    // Insert role in 'profiles' table
-    const { error: profileError } = await supabase.from('profiles').insert({
-      id: data.user.id,
-      role: role || 'student'
+  try {
+    const { data, error } = await supabase.auth.signUp({
+      email,
+      password,
+      options: {
+        emailRedirectTo: `${window.location.origin}/complete-profile`,
+        data: {
+          role: role || 'student'
+        }
+      }
     });
-    
-    if (profileError) {
-      console.error('Error creating profile:', profileError);
-    }
-  }
 
-  return { data, error };
+    if (error) {
+      console.error('Signup error:', error);
+      return { data, error };
+    }
+
+    // Only create profile if user was created successfully
+    if (data?.user) {
+      // Insert role in 'profiles' table
+      const { error: profileError } = await supabase.from('profiles').insert({
+        id: data.user.id,
+        role: role || 'student'
+      });
+      
+      if (profileError) {
+        console.error('Error creating profile:', profileError);
+        // Don't return error here as user was created successfully
+      }
+    }
+
+    return { data, error };
+  } catch (err) {
+    console.error('Unexpected signup error:', err);
+    return { data: null, error: err };
+  }
 };
 
 // Login
