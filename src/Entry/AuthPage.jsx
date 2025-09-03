@@ -111,11 +111,11 @@ export default function AuthPage({ type = 'login' }) {
             </>
           )}
 
-          <button onClick={handleSubmit} className="auth-button">
+          <button onClick={handleSubmit} className="auth-button" disabled={loading}>
             {loading ? 'Please wait...' : (isLogin ? 'Login' : 'Sign Up')}
           </button>
 
-          <button onClick={handleGoogleLogin} className="auth-button google">
+          <button onClick={handleGoogleLogin} className="auth-button google" disabled = {loading}>
             {loading ? 'Please wait...' : `${isLogin ? 'Login' : 'Sign Up'} with Google`}
           </button>
 

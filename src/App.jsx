@@ -3,8 +3,7 @@ import { Routes, Route } from "react-router-dom";
 // User-facing components
 import Welcome from "./Entry/Welcome"
 import AuthPage from "./Entry/AuthPage";
-import Login from "./Entry/Login";
-import OtpVerify from "./Entry/Otp-verify";
+
 import CompleteProfile from "./Entry/Complete-profile";
 import Navbar from "./Reuseable/Navbar";
 import Footer from "./Reuseable/Footer";
@@ -18,6 +17,7 @@ import SubjectList from "./Admin/components/SubjectList";
 import SubjectForm from "./Admin/components/SubjectForm";
 import QuestionList from "./Admin/components/QuestionList";
 import QuestionForm from "./Admin/components/QuestionForm";
+import UsersPage from "./Admin/UsersPage";
 
 // Protected Route component
 import ProtectedRoute from "./components/ProtectedRoute";
@@ -50,6 +50,11 @@ function App() {
       <Route path="/admin" element={
         <ProtectedRoute requiredRole="admin">
           <AdminDashboard />
+        </ProtectedRoute>
+      } />
+      <Route path="admin/users" element={
+        <ProtectedRoute requiredRole="admin">
+          <UsersPage/>
         </ProtectedRoute>
       } />
       <Route path="/admin/subjects" element={

@@ -10,85 +10,128 @@ export default function CompleteProfile() {
 
   const navigate = useNavigate();
 
-  useEffect(() => {
-    const checkUser = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) {
-        navigate('/login');
-        return;
-      }
-      setUser(session.user);
+ useEffect(() => {
+  const checkUser = async () => {
+    // Get the session
+    const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+    if (sessionError || !session) {
+      navigate('/login');
+      return;
+    }
 
-      // Check if profile is already completed
-      const { data: profile } = await supabase
+    setUser(session.user);
+
+    let profile;
+    const { data, error } = await supabase
+      .from('profiles')
+      .select('profile_completed, full_name, year_of_study')
+      .eq('id', session.user.id)
+      .single();
+
+    if (error && error.code === 'PGRST116') {
+      // No profile exists, insert a new row
+      const { data: newProfile, error: insertError } = await supabase
         .from('profiles')
-        .select('profile_completed, full_name, year_of_study')
-        .eq('id', session.user.id)
+        .insert({ id: session.user.id })
+        .select()
         .single();
 
-      if (profile?.profile_completed) {
-        navigate('/dashboard');
-      } else if (profile?.full_name) {
-        setName(profile.full_name);
-        setYear(profile.year_of_study || '');
+      if (insertError) {
+        console.error('Error creating profile:', insertError);
+        return;
       }
-    };
 
-    checkUser();
-  }, [navigate]);
-
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-
-    if (name.trim() && year) {
-      setLoading(true);
-      
-      try {
-        if (user) {
-          // Update user profile in Supabase
-          const { error } = await supabase
-            .from('profiles')
-            .update({
-              full_name: name.trim(),
-              year_of_study: year,
-              profile_completed: true
-            })
-            .eq('id', user.id);
-
-          if (error) {
-            console.error('Error updating profile:', error);
-            alert('Error saving profile. Please try again.');
-            setLoading(false);
-            return;
-          }
-
-          // Save user name to localStorage for quick access
-          localStorage.setItem("userName", name.trim());
-          localStorage.setItem("userYear", year);
-
-          // Check user role and navigate accordingly
-          const { data: profile } = await supabase
-            .from('profiles')
-            .select('role')
-            .eq('id', user.id)
-            .single();
-
-          if (profile?.role === 'admin') {
-            navigate("/admin");
-          } else {
-            navigate("/dashboard");
-          }
-        }
-      } catch (error) {
-        console.error('Profile completion error:', error);
-        alert('Error saving profile. Please try again.');
-      }
-      
-      setLoading(false);
+      profile = newProfile;
+    } else if (error) {
+      console.error('Error fetching profile:', error);
+      return;
     } else {
-      alert("Please complete all fields!");
+      profile = data;
+    }
+
+    // If profile already completed, redirect
+    if (profile?.profile_completed) {
+      navigate('/dashboard');
+    } else if (profile?.full_name) {
+      setName(profile.full_name);
+      setYear(profile.year_of_study || '');
     }
   };
+
+  checkUser();
+}, [navigate]);
+
+const handleSubmit = async (e) => {
+  e.preventDefault();
+
+  if (!name.trim() || !year) {
+    alert("Please complete all fields!");
+    return;
+  }
+
+  setLoading(true);
+
+  try {
+    if (!user) {
+      alert("User not found. Please login again.");
+      setLoading(false);
+      return;
+    }
+
+    // Ensure profile exists for first-time users
+    const { data: existingProfile, error: fetchError } = await supabase
+      .from('profiles')
+      .select('id')
+      .eq('id', user.id)
+      .single();
+
+    if (fetchError && fetchError.code === 'PGRST116') {
+      await supabase.from('profiles').insert({ id: user.id });
+    } else if (fetchError) {
+      console.error('Error fetching profile:', fetchError);
+      alert('Error saving profile. Please try again.');
+      setLoading(false);
+      return;
+    }
+
+    // Update profile
+    const { error: updateError } = await supabase
+      .from('profiles')
+      .update({
+        full_name: name.trim(),
+        year_of_study: year,
+        profile_completed: true
+      })
+      .eq('id', user.id);
+
+    if (updateError) {
+      console.error('Error updating profile:', updateError);
+      alert('Error saving profile. Please try again.');
+      setLoading(false);
+      return;
+    }
+
+    // Save to localStorage
+    localStorage.setItem("userName", name.trim());
+    localStorage.setItem("userYear", year);
+
+    // Navigate based on role
+    const { data: profileData } = await supabase
+      .from('profiles')
+      .select('role')
+      .eq('id', user.id)
+      .single();
+
+    if (profileData?.role === 'admin') navigate("/admin");
+    else navigate("/dashboard");
+
+  } catch (error) {
+    console.error('Profile completion error:', error);
+    alert('Error saving profile. Please try again.');
+  }
+
+  setLoading(false);
+};
 
   return (
     <>
