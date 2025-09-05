@@ -4,7 +4,7 @@ import { Routes, Route } from "react-router-dom";
 import Welcome from "./Entry/Welcome"
 import AuthPage from "./Entry/AuthPage";
 
-import CompleteProfile from "./Entry/Complete-profile";
+import CompleteProfile from "./Entry/CompleteProfile";
 import Navbar from "./Reuseable/Navbar";
 import Footer from "./Reuseable/Footer";
 import Dashboard from "./Dashboard/Dashboard";
