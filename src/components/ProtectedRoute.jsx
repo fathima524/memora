@@ -10,80 +10,81 @@ const ProtectedRoute = ({ children, requiredRole = null }) => {
 
   useEffect(() => {
     const checkAuth = async () => {
-  try {
-    const { data: { session } } = await supabase.auth.getSession();
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
 
-    if (!session) {
-      navigate('/login');
-      return;
-    }
-
-    setUser(session.user);
-
-    // Try to fetch profile
-    // Try to fetch profile
-let profile;
-try {
-  const { data, error } = await supabase
-    .from('profiles')
-    .select('role, profile_completed')
-    .eq('id', session.user.id)
-    .maybeSingle();
-
-  if (error) throw error;
-
-  profile = data;
-} catch (err) {
-  console.error('Error fetching profile:', err);
-  profile = null;
-}
+        if (!session) {
+          navigate('/login');
+          return;
+        }
+        if (!session.user.email_confirmed_at) {
+          await supabase.auth.signOut();
+          alert("Please verify your email before logging in.");
+          navigate("/login");
+          return;
+        }
 
 
-// If no profile exists, create one
-if (!profile) {
-  const { data: newProfile, error: insertError } = await supabase
-    .from('profiles')
-    .insert({
-      id: session.user.id,
-      full_name: session.user.user_metadata?.full_name || "",
-      profile_completed: false,
-      role: "student" // default role
-    })
-    .select()
-    .single();
+        setUser(session.user);
 
-  if (insertError) {
-    console.error('Error creating profile:', insertError);
-    navigate('/login');
-    return;
-  }
+        // Try to fetch profile
+        let profile;
+        try {
+          const { data, error } = await supabase
+            .from('profiles')
+            .select('role, profile_completed')
+            .eq('id', session.user.id)
+            .maybeSingle();
 
-  profile = newProfile;
-}
+          if (error) throw error;
+          profile = data;
+        } catch (err) {
+          console.error('Error fetching profile:', err);
+          profile = null;
+        }
 
+        // If no profile exists, create one (always student)
+        if (!profile) {
+          const { data: newProfile, error: insertError } = await supabase
+            .from('profiles')
+            .insert({
+              id: session.user.id,
+              full_name: session.user.user_metadata?.full_name || "",
+              profile_completed: false,
+              role: "student" // 🔒 always student
+            })
+            .select()
+            .single();
 
-    // If profile is not completed, redirect
-    if (!profile.profile_completed) {
-      navigate('/complete-profile');
-      return;
-    }
+          if (insertError) {
+            console.error('Error creating profile:', insertError);
+            navigate('/login');
+            return;
+          }
 
-    setUserRole(profile.role);
+          profile = newProfile;
+        }
 
-    // Check required role
-    if (requiredRole && profile.role !== requiredRole) {
-      navigate('/dashboard');
-      return;
-    }
+        // If profile is not completed, redirect
+        if (!profile.profile_completed) {
+          navigate('/complete-profile');
+          return;
+        }
 
-    setLoading(false);
+        setUserRole(profile.role);
 
-  } catch (error) {
-    console.error('Auth check error:', error);
-    navigate('/login');
-  }
-};
+        // If required role is passed, check it (but dashboard is same for all)
+        if (requiredRole && profile.role !== requiredRole) {
+          navigate('/dashboard');
+          return;
+        }
 
+        setLoading(false);
+      } catch (error) {
+        console.error('Auth check error:', error);
+        navigate('/login');
+      }
+    };
 
     checkAuth();
 

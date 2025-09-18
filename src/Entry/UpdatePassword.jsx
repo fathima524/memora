@@ -1,144 +1,77 @@
-import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { loginWithEmail, signUpWithEmail, signInWithGoogle, logout } from '../supabase/auth';
+import React, { useState, useEffect } from 'react';
 import { supabase } from '../supabase/supabaseClient';
+import { useSearchParams, useNavigate } from 'react-router-dom';
 
-export default function AuthPage({ type = 'login' }) {
-  const [email, setEmail] = useState('');
+export default function UpdatePasswordPage() {
   const [password, setPassword] = useState('');
-  const [role, setRole] = useState('student');
+  const [confirmPassword, setConfirmPassword] = useState('');
   const [loading, setLoading] = useState(false);
+  const [searchParams] = useSearchParams();
   const navigate = useNavigate();
 
-  const isLogin = type === 'login';
+  const handleUpdatePassword = async () => {
+    if (!password) {
+      alert('Please enter a new password');
+      return;
+    }
 
-  const handleSubmit = async () => {
-    if (!email || !password) {
-      alert('Please fill in all fields');
+    if (password.length < 6) {
+      alert('Password must be at least 6 characters long');
+      return;
+    }
+
+    if (password !== confirmPassword) {
+      alert('Passwords do not match');
       return;
     }
 
     setLoading(true);
 
-    try {
-      if (isLogin) {
-        const { data, error } = await loginWithEmail(email, password);
-        if (error) {
-          alert(error.message);
-        } else {
-          // Check user role and redirect accordingly
-          const { data: profile, error: profileError } = await supabase
-            .from('profiles')
-            .select('role, profile_completed')
-            .eq('id', data.user.id)
-            .single();
+    const access_token = searchParams.get('access_token'); // Supabase sends this in URL
 
-          if (profileError) {
-            console.error('Error fetching profile:', profileError);
-            navigate('/complete-profile');
-          } else if (!profile.profile_completed) {
-            navigate('/complete-profile');
-          } else if (profile?.role === 'admin') {
-            navigate('/admin');
-          } else {
-            navigate('/dashboard');
-          }
-        }
-      } else {
-        const { data, error } = await signUpWithEmail(email, password, role);
-        if (error) {
-          alert(error.message);
-        } else {
-          alert('Account created successfully! Please check your email for verification.');
-          navigate('/login');
-        }
-      }
-    } catch (error) {
-      console.error('Authentication error:', error);
-      alert('An error occurred. Please try again.');
+    const { error } = await supabase.auth.updateUser({
+      password
+    }, { accessToken: access_token });
+
+    if (error) {
+      alert(error.message);
+    } else {
+      alert('Password updated successfully! You can now login.');
+      navigate('/login');
     }
 
     setLoading(false);
   };
 
-  const handleGoogleLogin = async () => {
-    setLoading(true);
-    try {
-      const { error } = await signInWithGoogle();
-      if (error) {
-        alert(error.message);
-        setLoading(false);
-      }
-      // Note: Google login will redirect automatically, so we don't set loading to false here
-    } catch (error) {
-      console.error('Google login error:', error);
-      alert('Google login failed. Please try again.');
-      setLoading(false);
-    }
-  };
-
   return (
-   <div className="auth-page">
-  <div className="auth-box">
-    <h1 className="auth-title">{isLogin ? 'Login' : 'Sign Up'} to Flash-doc</h1>
+    <div className="auth-page">
+      <div className="auth-box">
+        <h1 className="auth-title">Set New Password</h1>
 
-    <div className="auth-form">
-      <label>Email</label>
-      <input
-        type="email"
-        placeholder="Enter your email"
-        value={email}
-        onChange={e => setEmail(e.target.value)}
-        className="auth-input"
-      />
+        <div className="auth-form">
+          <label>New Password</label>
+          <input
+            type="password"
+            placeholder="Enter your new password"
+            value={password}
+            onChange={e => setPassword(e.target.value)}
+            className="auth-input"
+          />
 
-      <label>Password</label>
-      <input
-        type="password"
-        placeholder="Enter your password"
-        value={password}
-        onChange={e => setPassword(e.target.value)}
-        className="auth-input"
-      />
+          <label>Confirm New Password</label>
+          <input
+            type="password"
+            placeholder="Confirm your new password"
+            value={confirmPassword}
+            onChange={e => setConfirmPassword(e.target.value)}
+            className="auth-input"
+          />
 
-      {!isLogin && (
-        <>
-          <label>Role</label>
-          <select value={role} onChange={e => setRole(e.target.value)} className="auth-select">
-            <option value="student">Student</option>
-          </select>
-        </>
-      )}
-
-      {isLogin && (
-        <p
-          className="forgot-password"
-          style={{ cursor: 'pointer', color: '#3182ce', marginBottom: '1rem' }}
-          onClick={() => navigate('/forgot-password')}
-        >
-          Forgot Password?
-        </p>
-      )}
-
-      <button onClick={handleSubmit} className="auth-button" disabled={loading}>
-        {loading ? 'Please wait...' : (isLogin ? 'Login' : 'Sign Up')}
-      </button>
-
-      <button onClick={handleGoogleLogin} className="auth-button google" disabled={loading}>
-        {loading ? 'Please wait...' : `${isLogin ? 'Login' : 'Sign Up'} with Google`}
-      </button>
-
-      <p className="switch-text">
-        {isLogin ? "Don't have an account?" : 'Already have an account?'}{' '}
-        <span
-          className="switch-link"
-          onClick={() => navigate(isLogin ? '/signup' : '/login')}
-        >
-          {isLogin ? 'Sign Up' : 'Login'}
-        </span>
-      </p>
-    </div>
-  </div>
+          <button onClick={handleUpdatePassword} className="auth-button" disabled={loading}>
+            {loading ? 'Updating...' : 'Update Password'}
+          </button>
+        </div>
+      </div>
 
       <style>{`
         * {
@@ -204,7 +137,7 @@ export default function AuthPage({ type = 'login' }) {
           margin-bottom: -15px;
         }
 
-        .auth-input, .auth-select {
+        .auth-input {
           width: 100%;
           padding: 16px;
           border: 2px solid #e8eaec;
@@ -217,7 +150,7 @@ export default function AuthPage({ type = 'login' }) {
           font-family: inherit;
         }
 
-        .auth-input:focus, .auth-select:focus {
+        .auth-input:focus {
           border-color: #5a6b7a;
           background-color: rgba(255, 255, 255, 1);
           box-shadow: 0 0 0 3px rgba(90, 107, 122, 0.1);
@@ -249,45 +182,14 @@ export default function AuthPage({ type = 'login' }) {
           cursor: not-allowed;
         }
 
-        .auth-button.google {
-          background: linear-gradient(135deg, #db4437 0%, #c23321 100%);
-          margin-top: 5px;
-        }
-
         .auth-button:hover:not(:disabled) {
           background: linear-gradient(135deg, #2a3642 0%, #485460 100%);
           transform: translateY(-2px);
           box-shadow: 0 8px 20px rgba(60, 75, 92, 0.4);
         }
 
-        .auth-button.google:hover:not(:disabled) {
-          background: linear-gradient(135deg, #c23321 0%, #a52714 100%);
-          box-shadow: 0 8px 20px rgba(219, 68, 55, 0.4);
-        }
-
         .auth-button:active:not(:disabled) {
           transform: translateY(0);
-        }
-
-        .switch-text {
-          text-align: center;
-          color: #5a6b7a;
-          font-size: 14px;
-          line-height: 1.5;
-          margin-top: 10px;
-        }
-
-        .switch-link {
-          color: #3c4b5c;
-          font-weight: 600;
-          cursor: pointer;
-          text-decoration: none;
-          transition: color 0.3s ease;
-        }
-
-        .switch-link:hover {
-          color: #2a3642;
-          text-decoration: underline;
         }
 
         /* Responsive Design */
@@ -332,7 +234,7 @@ export default function AuthPage({ type = 'login' }) {
             gap: 16px;
           }
           
-          .auth-input, .auth-select {
+          .auth-input {
             padding: 14px;
             font-size: 16px;
           }
@@ -340,10 +242,6 @@ export default function AuthPage({ type = 'login' }) {
           .auth-button {
             padding: 14px;
             font-size: 16px;
-          }
-          
-          .switch-text {
-            font-size: 13px;
           }
         }
 
@@ -372,7 +270,7 @@ export default function AuthPage({ type = 'login' }) {
             margin-bottom: -12px;
           }
           
-          .auth-input, .auth-select {
+          .auth-input {
             padding: 12px;
             font-size: 15px;
           }
@@ -408,7 +306,7 @@ export default function AuthPage({ type = 'login' }) {
             margin-bottom: -10px;
           }
           
-          .auth-input, .auth-select {
+          .auth-input {
             padding: 10px;
             font-size: 14px;
           }
@@ -416,10 +314,6 @@ export default function AuthPage({ type = 'login' }) {
           .auth-button {
             padding: 10px;
             font-size: 14px;
-          }
-          
-          .switch-text {
-            font-size: 12px;
           }
         }
 
@@ -439,7 +333,7 @@ export default function AuthPage({ type = 'login' }) {
             gap: 22px;
           }
           
-          .auth-input, .auth-select {
+          .auth-input {
             padding: 18px;
             font-size: 17px;
           }
@@ -472,7 +366,7 @@ export default function AuthPage({ type = 'login' }) {
             gap: 12px;
           }
           
-          .auth-input, .auth-select {
+          .auth-input {
             padding: 12px;
           }
           
@@ -487,14 +381,14 @@ export default function AuthPage({ type = 'login' }) {
             border: 0.5px solid rgba(255, 255, 255, 0.3);
           }
           
-          .auth-input, .auth-select {
+          .auth-input {
             border-width: 1px;
           }
         }
 
         /* Reduce motion for accessibility */
         @media (prefers-reduced-motion: reduce) {
-          .auth-input, .auth-select, .auth-button, .switch-link {
+          .auth-input, .auth-button {
             transition: none;
           }
           
@@ -502,7 +396,7 @@ export default function AuthPage({ type = 'login' }) {
             transform: none;
           }
           
-          .auth-input:focus, .auth-select:focus {
+          .auth-input:focus {
             transform: none;
           }
         }
@@ -521,10 +415,9 @@ export default function AuthPage({ type = 'login' }) {
           outline-offset: 2px;
         }
 
-        .switch-link:focus-visible {
+        .auth-input:focus-visible {
           outline: 2px solid #5a6b7a;
-          outline-offset: 1px;
-          border-radius: 2px;
+          outline-offset: 2px;
         }
       `}</style>
     </div>

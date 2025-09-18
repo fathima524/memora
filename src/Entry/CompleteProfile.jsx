@@ -29,20 +29,26 @@ export default function CompleteProfile() {
       .single();
 
     if (error && error.code === 'PGRST116') {
-      // No profile exists, insert a new row
-      const { data: newProfile, error: insertError } = await supabase
-        .from('profiles')
-        .insert({ id: session.user.id })
-        .select()
-        .single();
+  // No profile exists, insert a new row with required fields
+  const { data: newProfile, error: insertError } = await supabase
+    .from('profiles')
+    .insert({
+      id: session.user.id,          // ✅ matches auth.uid()
+      email: session.user.email,    // ✅ include email
+      role: 'student',              // ✅ or admin if needed
+      profile_completed: false
+    })
+    .select()
+    .single();
 
-      if (insertError) {
-        console.error('Error creating profile:', insertError);
-        return;
-      }
+  if (insertError) {
+    console.error('Error creating profile:', insertError);
+    return;
+  }
 
-      profile = newProfile;
-    } else if (error) {
+  profile = newProfile;
+}
+else if (error) {
       console.error('Error fetching profile:', error);
       return;
     } else {
@@ -85,14 +91,18 @@ const handleSubmit = async (e) => {
       .eq('id', user.id)
       .single();
 
-    if (fetchError && fetchError.code === 'PGRST116') {
-      await supabase.from('profiles').insert({ id: user.id });
-    } else if (fetchError) {
-      console.error('Error fetching profile:', fetchError);
-      alert('Error saving profile. Please try again.');
-      setLoading(false);
-      return;
-    }
+   if (fetchError && fetchError.code === 'PGRST116') {
+  // Profile not found, but we already handle insert in useEffect.
+  alert('Profile not found. Please refresh and try again.');
+  setLoading(false);
+  return;
+} else if (fetchError) {
+  console.error('Error fetching profile:', fetchError);
+  alert('Error saving profile. Please try again.');
+  setLoading(false);
+  return;
+}
+
 
     // Update profile
     const { error: updateError } = await supabase

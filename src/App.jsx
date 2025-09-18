@@ -10,7 +10,8 @@ import Footer from "./Reuseable/Footer";
 import Dashboard from "./Dashboard/Dashboard";
 import Flashcard from "./Flashcard/Flashcard";
 import Streaks from "./Flashcard/Streaks";
-
+import ForgotPasswordPage from "./Entry/ForgotPassword";
+import UpdatePasswordPage from "./Entry/UpdatePassword";
 // Admin components
 import AdminDashboard from "./Admin/AdminDashboard";
 import SubjectList from "./Admin/components/SubjectList";
@@ -18,7 +19,10 @@ import SubjectForm from "./Admin/components/SubjectForm";
 import QuestionList from "./Admin/components/QuestionList";
 import QuestionForm from "./Admin/components/QuestionForm";
 import UsersPage from "./Admin/UsersPage";
-
+import StreaksPage from "./Flashcard/StreaksPage";
+import ProfilePage from "./Entry/ProfilePage";
+import ActiveUsers from "./Admin/components/ActiveUsers";
+import AdminSettings from "./Admin/components/AdminSettings";
 // Protected Route component
 import ProtectedRoute from "./components/ProtectedRoute";
 
@@ -29,10 +33,17 @@ function App() {
       <Route path="/" element={<Welcome />} />
       <Route path="/login" element={<AuthPage type="login" />} />
       <Route path="/signup" element={<AuthPage type="signup" />} />
+      <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+      <Route path="/update-password" element={<UpdatePasswordPage />} />
       <Route path="/complete-profile" element={<CompleteProfile />} />
       <Route path="/dashboard" element={
         <ProtectedRoute>
           <Dashboard />
+        </ProtectedRoute>
+      } />
+      <Route path="/profilepage" element={
+        <ProtectedRoute>
+          <ProfilePage/>
         </ProtectedRoute>
       } />
       <Route path="/flashcard" element={
@@ -42,9 +53,10 @@ function App() {
       } />
       <Route path="/streaks" element={
         <ProtectedRoute>
-          <Streaks />
+          <StreaksPage />
         </ProtectedRoute>
       } />
+
 
       {/* Admin routes */}
       <Route path="/admin" element={
@@ -52,9 +64,20 @@ function App() {
           <AdminDashboard />
         </ProtectedRoute>
       } />
+      <Route path="/admin/activeusers" element={
+        <ProtectedRoute requiredRole="admin">
+          <ActiveUsers />
+        </ProtectedRoute>
+      } />
+      
+      <Route path="/admin/adminsettings" element={
+        <ProtectedRoute requiredRole="admin">
+          <AdminSettings/>
+        </ProtectedRoute>
+      } />
       <Route path="admin/users" element={
         <ProtectedRoute requiredRole="admin">
-          <UsersPage/>
+          <UsersPage />
         </ProtectedRoute>
       } />
       <Route path="/admin/subjects" element={

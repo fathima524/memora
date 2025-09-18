@@ -1,7 +1,6 @@
 import React from "react";
 import { Link } from "react-router-dom";
 
-
 export default function Welcome() {
   return (
     <div className="welcome-page">
@@ -12,12 +11,24 @@ export default function Welcome() {
         </p>
 
         <Link to="/login" className="welcome-button">Get Started</Link>
-
       </div>
 
       <style>{`
+        * {
+          margin: 0;
+          padding: 0;
+          box-sizing: border-box;
+        }
+
+        body, html {
+          margin: 0;
+          padding: 0;
+          overflow-x: hidden;
+        }
+
         .welcome-page {
           min-height: 100vh;
+          min-height: 100dvh;
           width: 100vw;
           background: linear-gradient(135deg, #3c4b5c 0%, #5a6b7a 40%, #8b9da9 70%, #e8eaec 100%);
           background-attachment: fixed;
@@ -29,7 +40,7 @@ export default function Welcome() {
           padding: 20px;
           font-family: "Inter", "Segoe UI", "Roboto", sans-serif;
           margin: 0;
-          box-sizing: border-box;
+          position: relative;
           animation: fadeInBackground 1.2s ease-out;
         }
 
@@ -90,7 +101,7 @@ export default function Welcome() {
           box-shadow: 0 8px 20px rgba(60, 75, 92, 0.4);
           text-decoration: none;
           color: white;
-          animation: none; /* Stop pulse animation on hover */
+          animation: none;
         }
 
         .welcome-button:active {
@@ -131,17 +142,15 @@ export default function Welcome() {
           }
         }
 
+        /* Responsive Design */
         @media (max-width: 768px) {
           .welcome-page {
             padding: 15px;
-            min-height: 100vh;
-            min-height: 100dvh; /* For mobile browsers */
           }
           
           .welcome-box {
             padding: 50px 30px;
-            max-width: 95%;
-            width: 100%;
+            max-width: calc(100vw - 30px);
           }
           
           .welcome-title {
@@ -160,7 +169,7 @@ export default function Welcome() {
           
           .welcome-box {
             padding: 40px 20px;
-            max-width: 100%;
+            max-width: calc(100vw - 20px);
             border-radius: 15px;
           }
           
@@ -180,9 +189,14 @@ export default function Welcome() {
           }
         }
 
-        @media (max-width: 320px) {
+        @media (max-width: 375px) {
+          .welcome-page {
+            padding: 8px;
+          }
+          
           .welcome-box {
             padding: 35px 15px;
+            max-width: calc(100vw - 16px);
             border-radius: 12px;
           }
           
@@ -192,6 +206,79 @@ export default function Welcome() {
           
           .welcome-text {
             font-size: 13px;
+            line-height: 1.5;
+          }
+        }
+
+        @media (max-width: 320px) {
+          .welcome-page {
+            padding: 5px;
+          }
+          
+          .welcome-box {
+            padding: 30px 12px;
+            max-width: calc(100vw - 10px);
+            border-radius: 10px;
+          }
+          
+          .welcome-title {
+            font-size: 20px;
+            margin-bottom: 15px;
+          }
+          
+          .welcome-text {
+            font-size: 12px;
+            margin-bottom: 25px;
+          }
+          
+          .welcome-button {
+            padding: 12px;
+            font-size: 14px;
+          }
+        }
+
+        /* Ultra-wide screens */
+        @media (min-width: 1200px) {
+          .welcome-box {
+            max-width: 550px;
+            padding: 70px 60px;
+          }
+          
+          .welcome-title {
+            font-size: 36px;
+          }
+          
+          .welcome-text {
+            font-size: 18px;
+          }
+        }
+
+        /* Landscape orientation on mobile */
+        @media (max-height: 500px) and (orientation: landscape) {
+          .welcome-page {
+            padding: 10px;
+          }
+          
+          .welcome-box {
+            padding: 30px 40px;
+            max-width: 90vw;
+          }
+          
+          .welcome-title {
+            font-size: 24px;
+            margin-bottom: 15px;
+          }
+          
+          .welcome-text {
+            font-size: 14px;
+            margin-bottom: 25px;
+          }
+        }
+
+        /* High DPI displays */
+        @media (-webkit-min-device-pixel-ratio: 2), (min-resolution: 2dppx) {
+          .welcome-box {
+            border: 0.5px solid rgba(255, 255, 255, 0.3);
           }
         }
 
@@ -205,8 +292,16 @@ export default function Welcome() {
             animation: none;
           }
           
-          .welcome-button {
-            animation: none;
+          .welcome-button:hover {
+            transform: none;
+          }
+        }
+
+        /* Dark mode support */
+        @media (prefers-color-scheme: dark) {
+          .welcome-box {
+            background: rgba(255, 255, 255, 0.98);
+            backdrop-filter: blur(15px);
           }
         }
       `}</style>

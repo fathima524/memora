@@ -1,29 +1,34 @@
 import { supabase } from './supabaseClient';
 
-// Sign up
-export const signUpWithEmail = async (email, password, role) => {
-  const { data, error } = await supabase.auth.signUp({
+// Sign up (only handles auth, no profile insert yet)
+export const signUpWithEmail = async (email, password) => {
+  return await supabase.auth.signUp({
     email,
     password,
     options: {
       emailRedirectTo: `${window.location.origin}/complete-profile`
     }
   });
-
-  if (data?.user && !error) {
-    // Insert role in 'profiles' table
-    const { error: profileError } = await supabase.from('profiles').insert({
-      id: data.user.id,
-      role: role || 'student'
-    });
-    
-    if (profileError) {
-      console.error('Error creating profile:', profileError);
-    }
-  }
-
-  return { data, error };
 };
+
+// Complete Profile (called after login/redirect)
+export const createProfile = async (role = 'student') => {
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return { error: "No authenticated user" };
+
+  const { error } = await supabase.from('profiles').insert([
+    {
+      id: user.id,   // ✅ now matches auth.uid()
+      email: user.email,
+      role,
+      profile_completed: false
+    }
+  ]);
+
+  if (error) console.error("Error creating profile:", error);
+  return { error };
+};
+
 
 // Login
 export const loginWithEmail = async (email, password) => {

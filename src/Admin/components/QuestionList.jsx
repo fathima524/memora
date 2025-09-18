@@ -204,150 +204,237 @@ const QuestionList = () => {
 
 
 
-
-// CSS Styles
+// CSS Styles - Responsive with no white corners like ProfilePage
 const styles = {
   container: {
     minHeight: '100vh',
+    minWidth: '100vw',
+    width: '100%',
+    height: '100%',
     background: 'linear-gradient(135deg, #1a202c 0%, #2d3748 40%, #4a5568 70%, #718096 100%)',
-    padding: '2rem',
-    fontFamily: "'IBM Plex Sans', 'Segoe UI', system-ui, sans-serif"
+    padding: '0',
+    margin: '0',
+    fontFamily: "'IBM Plex Sans', 'Segoe UI', system-ui, sans-serif",
+    position: 'fixed',
+    top: '0',
+    left: '0',
+    right: '0',
+    bottom: '0',
+    overflowY: 'auto',
+    overflowX: 'hidden'
   },
 
   card: {
-    maxWidth: '1200px',
-    margin: '0 auto',
+    maxWidth: window.innerWidth <= 480 ? '100%' : window.innerWidth <= 768 ? '95%' : '1200px',
+    width: '100%',
+    margin: window.innerWidth <= 480 ? '0' : '2rem auto',
     background: 'rgba(255, 255, 255, 0.98)',
     backdropFilter: 'blur(20px)',
-    borderRadius: '8px',
-    padding: '2.5rem',
-    boxShadow: '0 4px 6px rgba(0, 0, 0, 0.05), 0 10px 15px rgba(0, 0, 0, 0.1)',
-    border: '1px solid rgba(203, 213, 224, 0.5)'
+    borderRadius: window.innerWidth <= 480 ? '0' : '8px',
+    padding: window.innerWidth <= 480 ? '1rem' : window.innerWidth <= 768 ? '1.5rem' : '2.5rem',
+    boxShadow: window.innerWidth <= 480 ? 'none' : '0 4px 6px rgba(0, 0, 0, 0.05), 0 10px 15px rgba(0, 0, 0, 0.1)',
+    border: window.innerWidth <= 480 ? 'none' : '1px solid rgba(203, 213, 224, 0.5)',
+    minHeight: window.innerWidth <= 480 ? '100vh' : 'auto',
+    boxSizing: 'border-box'
   },
 
   header: {
     display: 'flex',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: '2rem',
-    paddingBottom: '1rem',
-    borderBottom: '2px solid #e2e8f0'
+    marginBottom: window.innerWidth <= 480 ? '1.5rem' : '2rem',
+    paddingBottom: window.innerWidth <= 480 ? '0.8rem' : '1rem',
+    borderBottom: '2px solid #e2e8f0',
+    flexWrap: 'wrap',
+    gap: '1rem'
   },
 
   title: {
-    fontSize: '1.875rem',
+    fontSize: window.innerWidth <= 480 ? '1.25rem' : window.innerWidth <= 768 ? '1.5rem' : '1.875rem',
     fontWeight: '600',
     color: '#1a202c',
-    letterSpacing: '-0.025em'
+    letterSpacing: '-0.025em',
+    margin: '0'
   },
 
   buttonPrimary: {
-    padding: '0.75rem 1.5rem',
+    padding: window.innerWidth <= 480 ? '0.6rem 1.2rem' : '0.75rem 1.5rem',
     background: 'linear-gradient(135deg, #2d3748 0%, #4a5568 100%)',
     color: 'white',
     border: 'none',
     borderRadius: '6px',
-    fontSize: '0.925rem',
+    fontSize: window.innerWidth <= 480 ? '0.8rem' : '0.925rem',
     fontWeight: '500',
     textDecoration: 'none',
     cursor: 'pointer',
     transition: 'all 0.15s ease',
-    display: 'inline-block'
+    display: 'inline-block',
+    whiteSpace: 'nowrap'
   },
 
   questionCard: {
     background: '#f7fafc',
     border: '1px solid #e2e8f0',
     borderRadius: '6px',
-    padding: '1.5rem',
+    padding: window.innerWidth <= 480 ? '1rem' : '1.5rem',
     marginBottom: '1rem',
-    transition: 'all 0.15s ease'
+    transition: 'all 0.15s ease',
+    boxSizing: 'border-box'
   },
 
   questionText: {
-    fontSize: '1.1rem',
+    fontSize: window.innerWidth <= 480 ? '1rem' : '1.1rem',
     fontWeight: '600',
     color: '#1a202c',
     marginBottom: '1rem',
-    lineHeight: '1.5'
+    lineHeight: '1.5',
+    wordBreak: 'break-word'
   },
 
   questionMeta: {
-    fontSize: '0.8rem',
+    fontSize: window.innerWidth <= 480 ? '0.75rem' : '0.8rem',
     color: '#718096',
     marginBottom: '0.75rem'
   },
 
   questionDetails: {
-    fontSize: '0.9rem',
+    fontSize: window.innerWidth <= 480 ? '0.85rem' : '0.9rem',
     color: '#4a5568',
     marginBottom: '1rem',
-    lineHeight: '1.4'
+    lineHeight: '1.4',
+    wordBreak: 'break-word'
   },
 
   correctAnswer: {
     color: '#48bb78',
     fontWeight: '600',
-    marginLeft: '0.5rem'
+    marginLeft: '0.5rem',
+    fontSize: window.innerWidth <= 480 ? '0.85rem' : '0.9rem'
   },
 
   actionButtons: {
     display: 'flex',
-    gap: '0.5rem'
+    gap: window.innerWidth <= 480 ? '0.4rem' : '0.5rem',
+    flexWrap: 'wrap'
   },
 
   buttonSecondary: {
-    padding: '0.5rem 1rem',
+    padding: window.innerWidth <= 480 ? '0.4rem 0.8rem' : '0.5rem 1rem',
     background: 'white',
     color: '#2d3748',
     border: '1px solid #e2e8f0',
     borderRadius: '4px',
-    fontSize: '0.8rem',
+    fontSize: window.innerWidth <= 480 ? '0.75rem' : '0.8rem',
     fontWeight: '500',
     cursor: 'pointer',
     textDecoration: 'none',
-    transition: 'all 0.15s ease'
+    transition: 'all 0.15s ease',
+    whiteSpace: 'nowrap',
+    flexShrink: 0
   },
 
   buttonDanger: {
-    padding: '0.5rem 1rem',
+    padding: window.innerWidth <= 480 ? '0.4rem 0.8rem' : '0.5rem 1rem',
     background: '#fed7d7',
     color: '#c53030',
     border: '1px solid #feb2b2',
     borderRadius: '4px',
-    fontSize: '0.8rem',
+    fontSize: window.innerWidth <= 480 ? '0.75rem' : '0.8rem',
     fontWeight: '500',
     cursor: 'pointer',
-    transition: 'all 0.15s ease'
+    transition: 'all 0.15s ease',
+    whiteSpace: 'nowrap',
+    flexShrink: 0
+  },
+
+  loadingContainer: {
+    minHeight: '100vh',
+    minWidth: '100vw',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    background: 'linear-gradient(135deg, #1a202c 0%, #2d3748 40%, #4a5568 70%, #718096 100%)',
+    fontFamily: "'IBM Plex Sans', 'Segoe UI', system-ui, sans-serif",
+    position: 'fixed',
+    top: '0',
+    left: '0',
+    right: '0',
+    bottom: '0',
+    margin: '0',
+    padding: '0'
+  },
+
+  loadingCard: {
+    background: 'rgba(255, 255, 255, 0.98)',
+    backdropFilter: 'blur(20px)',
+    borderRadius: '8px',
+    padding: window.innerWidth <= 480 ? '1.5rem' : '2rem',
+    boxShadow: '0 4px 6px rgba(0, 0, 0, 0.05), 0 10px 15px rgba(0, 0, 0, 0.1)',
+    border: '1px solid rgba(203, 213, 224, 0.5)',
+    margin: '1rem',
+    maxWidth: '400px',
+    width: window.innerWidth <= 480 ? '90%' : '100%'
   },
 
   loadingText: {
     textAlign: 'center',
-    fontSize: '1.1rem',
-    color: '#4a5568'
+    fontSize: window.innerWidth <= 480 ? '1rem' : '1.1rem',
+    color: '#4a5568',
+    fontWeight: '600'
   },
 
   errorText: {
     textAlign: 'center',
-    fontSize: '1.1rem',
-    color: '#e53e3e'
+    fontSize: window.innerWidth <= 480 ? '1rem' : '1.1rem',
+    color: '#e53e3e',
+    fontWeight: '600'
   },
 
   emptyState: {
     textAlign: 'center',
-    padding: '3rem',
+    padding: window.innerWidth <= 480 ? '2rem 1rem' : '3rem',
     color: '#4a5568'
   },
 
   emptyText: {
-    fontSize: '1.1rem',
-    marginBottom: '1rem'
+    fontSize: window.innerWidth <= 480 ? '1rem' : '1.1rem',
+    marginBottom: '1rem',
+    fontWeight: '500'
   },
 
   footer: {
-    paddingTop: '2rem',
+    paddingTop: window.innerWidth <= 480 ? '1.5rem' : '2rem',
     borderTop: '1px solid #e2e8f0',
-    marginTop: '2rem'
+    marginTop: window.innerWidth <= 480 ? '1.5rem' : '2rem'
+  },
+
+  // Hover effects for interactive elements
+  buttonPrimaryHover: {
+    ':hover': {
+      transform: 'translateY(-2px)',
+      boxShadow: '0 8px 25px rgba(45, 55, 72, 0.3)'
+    }
+  },
+
+  buttonSecondaryHover: {
+    ':hover': {
+      background: '#f7fafc',
+      borderColor: '#cbd5e0'
+    }
+  },
+
+  buttonDangerHover: {
+    ':hover': {
+      background: '#feb2b2',
+      borderColor: '#fc8181'
+    }
+  },
+
+  questionCardHover: {
+    ':hover': {
+      transform: 'translateY(-2px)',
+      boxShadow: '0 4px 12px rgba(0, 0, 0, 0.1)'
+    }
   }
 };
 
