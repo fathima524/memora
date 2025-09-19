@@ -25,8 +25,15 @@ import ActiveUsers from "./Admin/components/ActiveUsers";
 import AdminSettings from "./Admin/components/AdminSettings";
 // Protected Route component
 import ProtectedRoute from "./components/ProtectedRoute";
+import { useEffect } from "react";
 
 function App() {
+
+  useEffect(() => {
+  console.log("Supabase URL:", import.meta.env.VITE_SUPABASE_URL);
+  console.log("Supabase Key:", import.meta.env.VITE_SUPABASE_ANON_KEY);
+}, []);
+
   return (
     <Routes>
       {/* User-facing routes */}
@@ -112,6 +119,7 @@ function App() {
       } />
     </Routes>
   );
+ 
 }
 
 export default App;
