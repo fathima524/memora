@@ -1,28 +1,46 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect } from "react";
+import { supabase } from "../../supabase/supabaseClient";
 
 function useWindowWidth() {
   const [width, setWidth] = useState(window.innerWidth);
-  
   useEffect(() => {
     const handleResize = () => setWidth(window.innerWidth);
-    window.addEventListener('resize', handleResize);
-    return () => window.removeEventListener('resize', handleResize);
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
   }, []);
-  
   return width;
 }
 
 const ActiveUsers = () => {
   const width = useWindowWidth();
-  const [users] = useState([
-    { id: 1, name: 'John Doe', status: 'online', lastSeen: 'Now' },
-    { id: 2, name: 'Jane Smith', status: 'online', lastSeen: '2 min ago' },
-    { id: 3, name: 'Ali Khan', status: 'offline', lastSeen: '1 hour ago' },
-    { id: 4, name: 'Sarah Wilson', status: 'online', lastSeen: 'Now' },
-    { id: 5, name: 'Mike Chen', status: 'offline', lastSeen: '3 hours ago' }
-  ]);
+  const [users, setUsers] = useState([]);
 
-  const onlineUsers = users.filter(user => user.status === 'online');
+  useEffect(() => {
+    const fetchUsers = async () => {
+      const cutoff = new Date(Date.now() - 6 * 60 * 60 * 1000).toISOString();
+
+      const { data, error } = await supabase
+        .from("profiles")
+        .select("id, full_name, last_seen")
+        .gte("last_seen", cutoff);
+
+      if (error) {
+        console.error("Error fetching users:", error);
+      } else {
+        setUsers(data);
+      }
+    };
+
+    fetchUsers();
+  }, []);
+
+  const isActive = (lastSeen) => {
+    const cutoff = Date.now() - 5 * 60 * 1000; // last 5 minutes = online
+    return new Date(lastSeen).getTime() > cutoff;
+  };
+
+  const onlineUsers = users.filter((u) => isActive(u.last_seen));
+
 
   const styles = {
     container: {
@@ -186,7 +204,7 @@ const ActiveUsers = () => {
         <div style={styles.header}>
           <h2 style={styles.title}>Active Users</h2>
           <p style={styles.subtitle}>Currently active members</p>
-          
+
           <div style={styles.statsContainer}>
             <span style={styles.totalBadge}>
               Total: {users.length}
@@ -201,42 +219,43 @@ const ActiveUsers = () => {
         <div style={styles.userList}>
           {users.length > 0 ? (
             <div style={styles.userListContainer}>
-              {users.map((user) => (
-                <div 
-                  key={user.id}
-                  style={styles.userItem}
-                  onMouseEnter={(e) => {
-                    Object.assign(e.target.style, styles.userItemHover);
-                  }}
-                  onMouseLeave={(e) => {
-                    e.target.style.backgroundColor = styles.userItem.backgroundColor;
-                    e.target.style.borderColor = styles.userItem.border.split(' ')[2];
-                  }}
-                >
-                  <div style={styles.userInfo}>
-                    {/* User Info */}
-                    <div style={styles.userDetails}>
-                      <h3 style={styles.userName}>{user.name}</h3>
-                      <p style={styles.lastSeen}>Last seen: {user.lastSeen}</p>
+              {users.map((user) => {
+                const status = isActive(user.last_seen) ? "online" : "offline";
+
+                return (
+                  <div
+                    key={user.id}
+                    style={styles.userItem}
+                    onMouseEnter={(e) => Object.assign(e.currentTarget.style, styles.userItemHover)}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.backgroundColor = styles.userItem.backgroundColor;
+                      e.currentTarget.style.borderColor = styles.userItem.border.split(' ')[2];
+                    }}
+                  >
+                    <div style={styles.userInfo}>
+                      <div style={styles.userDetails}>
+                        <h3 style={styles.userName}>{user.full_name}</h3>
+                        <p style={styles.lastSeen}>Last seen: {new Date(user.last_seen).toLocaleString()}</p>
+                      </div>
+                    </div>
+
+                    <div style={styles.statusContainer}>
+                      <div
+                        style={{
+                          ...styles.statusDot,
+                          ...(status === "online" ? styles.onlineDot : styles.offlineDot)
+                        }}
+                      />
+                      <span
+                        style={status === "online" ? styles.onlineStatus : styles.offlineStatus}
+                      >
+                        {status}
+                      </span>
                     </div>
                   </div>
-                  
-                  {/* Status */}
-                  <div style={styles.statusContainer}>
-                    <div 
-                      style={{
-                        ...styles.statusDot,
-                        ...(user.status === 'online' ? styles.onlineDot : styles.offlineDot)
-                      }}
-                    />
-                    <span 
-                      style={user.status === 'online' ? styles.onlineStatus : styles.offlineStatus}
-                    >
-                      {user.status}
-                    </span>
-                  </div>
-                </div>
-              ))}
+                );
+              })}
+
             </div>
           ) : (
             <div style={styles.emptyState}>
@@ -247,7 +266,7 @@ const ActiveUsers = () => {
 
         {/* Back Button */}
         <div style={styles.footer}>
-          <a 
+          <a
             href="/admin"
             style={styles.backButton}
             onMouseEnter={(e) => {

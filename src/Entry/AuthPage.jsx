@@ -12,6 +12,164 @@ export default function AuthPage({ type = 'login' }) {
 
   const isLogin = type === 'login';
 
+  // Helper function to get user email from auth
+  const getUserEmail = async (userId) => {
+    try {
+      const { data: authUser, error } = await supabase.auth.admin.getUserById(userId);
+      if (error) {
+        console.error('Error fetching auth user:', error);
+        return null;
+      }
+      return authUser?.user?.email || null;
+    } catch (error) {
+      console.error('Error in getUserEmail:', error);
+      return null;
+    }
+  };
+
+  // Helper function to create or update profile
+  const ensureUserProfile = async (userId, userEmail, isNewUser = false) => {
+    try {
+      console.log('=== PROFILE CREATION DEBUG ===');
+      console.log('User ID:', userId);
+      console.log('User Email:', userEmail);
+      console.log('Is New User:', isNewUser);
+      
+      // First, check if profile exists
+      let { data: existingProfile, error: selectError } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', userId)
+        .single();
+
+      console.log('Existing profile check:', { existingProfile, selectError });
+
+      if (selectError && selectError.code !== 'PGRST116') { // PGRST116 is "not found"
+        console.error('Error checking existing profile:', selectError);
+        throw selectError;
+      }
+
+      if (!existingProfile) {
+        // Profile doesn't exist, create it
+        console.log('=== CREATING NEW PROFILE ===');
+        
+        // Get email from current session if not provided
+        if (!userEmail) {
+          const { data: { session } } = await supabase.auth.getSession();
+          userEmail = session?.user?.email;
+        }
+
+        console.log('Final email for profile creation:', userEmail);
+        
+        const profileData = {
+          id: userId,
+          email: userEmail,
+          role: 'student',
+          profile_completed: false,
+          last_seen: new Date().toISOString(),
+          created_at: new Date().toISOString()
+        };
+        
+        console.log('Profile data to insert:', profileData);
+
+        const { data: insertData, error: insertError } = await supabase
+          .from('profiles')
+          .insert(profileData)
+          .select()
+          .single();
+
+        console.log('Insert result:', { insertData, insertError });
+
+        if (insertError) {
+          console.error('Error creating profile:', insertError);
+          console.error('Insert error details:', {
+            code: insertError.code,
+            message: insertError.message,
+            details: insertError.details,
+            hint: insertError.hint
+          });
+          
+          // If insert fails, try to get current user data and retry
+          if (insertError.code === '42501' || insertError.message?.includes('policy')) {
+            console.log('RLS policy error, trying alternative approach...');
+            
+            // Try using upsert instead
+            const { data: upsertData, error: upsertError } = await supabase
+              .from('profiles')
+              .upsert(profileData, {
+                onConflict: 'id'
+              })
+              .select()
+              .single();
+
+            console.log('Upsert result:', { upsertData, upsertError });
+
+            if (upsertError) {
+              console.error('Upsert also failed:', upsertError);
+              console.error('Upsert error details:', {
+                code: upsertError.code,
+                message: upsertError.message,
+                details: upsertError.details,
+                hint: upsertError.hint
+              });
+              throw upsertError;
+            }
+            return upsertData;
+          }
+          throw insertError;
+        }
+        
+        console.log('Profile created successfully:', insertData);
+        console.log('=== PROFILE CREATION SUCCESS ===');
+        return insertData;
+      } else {
+        // Profile exists, update last_seen and email if missing
+        console.log('=== UPDATING EXISTING PROFILE ===');
+        console.log('Current profile:', existingProfile);
+        
+        const updateData = {
+          last_seen: new Date().toISOString()
+        };
+        
+        // Add email if it's missing in the profile
+        if (!existingProfile.email && userEmail) {
+          console.log('Adding missing email to existing profile:', userEmail);
+          updateData.email = userEmail;
+        }
+
+        console.log('Update data:', updateData);
+
+        const { data: updateResult, error: updateError } = await supabase
+          .from('profiles')
+          .update(updateData)
+          .eq('id', userId)
+          .select()
+          .single();
+
+        console.log('Update result:', { updateResult, updateError });
+
+        if (updateError) {
+          console.error('Error updating profile:', updateError);
+          console.error('Update error details:', {
+            code: updateError.code,
+            message: updateError.message,
+            details: updateError.details,
+            hint: updateError.hint
+          });
+          throw updateError;
+        }
+
+        console.log('Profile updated successfully:', updateResult);
+        console.log('=== PROFILE UPDATE SUCCESS ===');
+        return updateResult;
+      }
+    } catch (error) {
+      console.error('Error in ensureUserProfile:', error);
+      console.error('=== PROFILE OPERATION FAILED ===');
+      throw error;
+    }
+  };
+
   const handleSubmit = async () => {
     if (!email || !password) {
       alert('Please fill in all fields');
@@ -22,29 +180,39 @@ export default function AuthPage({ type = 'login' }) {
 
     try {
       if (isLogin) {
-        const { data, error } = await loginWithEmail(email, password);
+        // Login with email/password
+        const { data: loginData, error } = await loginWithEmail(email, password);
         if (error) {
           alert(error.message);
-        } else {
-          // Check user role and redirect accordingly
-          const { data: profile, error: profileError } = await supabase
-            .from('profiles')
-            .select('role, profile_completed')
-            .eq('id', data.user.id)
-            .single();
-
-          if (profileError) {
-            console.error('Error fetching profile:', profileError);
-            navigate('/complete-profile');
-          } else if (!profile.profile_completed) {
-            navigate('/complete-profile');
-          } else if (profile?.role === 'admin') {
-            navigate('/admin');
-          } else {
-            navigate('/dashboard');
-          }
+          setLoading(false);
+          return;
         }
+
+        const userId = loginData?.user?.id;
+        const userEmail = loginData?.user?.email;
+        
+        if (!userId) {
+          console.error('User ID not found');
+          setLoading(false);
+          return;
+        }
+
+        console.log('Email/password login successful:', { userId, userEmail });
+
+        // Ensure profile exists with email
+        const profile = await ensureUserProfile(userId, userEmail || email);
+        
+        // Navigate based on profile
+        if (!profile.profile_completed) {
+          navigate('/complete-profile');
+        } else if (profile.role === 'admin') {
+          navigate('/admin');
+        } else {
+          navigate('/dashboard');
+        }
+
       } else {
+        // Sign up flow
         const { data, error } = await signUpWithEmail(email, password, role);
         if (error) {
           alert(error.message);
@@ -63,82 +231,179 @@ export default function AuthPage({ type = 'login' }) {
 
   const handleGoogleLogin = async () => {
     setLoading(true);
+
     try {
-      const { error } = await signInWithGoogle();
+      console.log('Starting Google authentication...');
+      
+      const { data: googleData, error } = await signInWithGoogle();
       if (error) {
+        console.error('Google auth error:', error);
         alert(error.message);
         setLoading(false);
+        return;
       }
-      // Note: Google login will redirect automatically, so we don't set loading to false here
+
+      console.log('Google auth response:', googleData);
+
+      // Wait a moment for the auth user to be fully created
+      await new Promise(resolve => setTimeout(resolve, 1000));
+
+      // Get current session to ensure we have fresh data - retry if needed
+      let session = null;
+      let sessionError = null;
+      
+      for (let i = 0; i < 3; i++) {
+        const { data: sessionData, error: err } = await supabase.auth.getSession();
+        if (!err && sessionData.session) {
+          session = sessionData.session;
+          sessionError = null;
+          break;
+        }
+        sessionError = err;
+        console.log(`Session attempt ${i + 1} failed, retrying...`);
+        await new Promise(resolve => setTimeout(resolve, 500));
+      }
+      
+      if (sessionError || !session) {
+        console.error('Session error after retries:', sessionError);
+        throw sessionError || new Error('Could not establish session');
+      }
+
+      const userId = session.user?.id;
+      const userEmail = session.user?.email;
+      
+      console.log('Session data:', { userId, userEmail, fullUser: session.user });
+
+      if (!userId) {
+        alert('Could not retrieve user information from Google. Please try again.');
+        setLoading(false);
+        return;
+      }
+
+      if (!userEmail) {
+        console.warn('Email not found in session, checking auth metadata...');
+        // Try to get email from user metadata
+        const altEmail = session.user?.user_metadata?.email || 
+                        session.user?.identities?.[0]?.identity_data?.email;
+        console.log('Alternative email sources:', {
+          metadata: session.user?.user_metadata?.email,
+          identity: session.user?.identities?.[0]?.identity_data?.email
+        });
+        
+        if (!altEmail) {
+          alert('Could not retrieve email from Google. Please ensure you have granted email permission.');
+          setLoading(false);
+          return;
+        }
+      }
+
+      // Ensure profile exists with retry mechanism
+      let profile = null;
+      let profileError = null;
+      
+      for (let i = 0; i < 3; i++) {
+        try {
+          profile = await ensureUserProfile(userId, userEmail, true);
+          profileError = null;
+          break;
+        } catch (error) {
+          profileError = error;
+          console.log(`Profile creation attempt ${i + 1} failed:`, error.message);
+          if (error.message?.includes('foreign key constraint')) {
+            console.log('Foreign key constraint error, waiting for user to be fully created...');
+            await new Promise(resolve => setTimeout(resolve, 1000));
+          } else {
+            break; // Don't retry for other types of errors
+          }
+        }
+      }
+      
+      if (profileError) {
+        console.error('Profile creation failed after retries:', profileError);
+        throw profileError;
+      }
+      
+      console.log('Final profile:', profile);
+
+      // Navigate based on profile
+      if (!profile.profile_completed) {
+        navigate('/complete-profile');
+      } else if (profile.role === 'admin') {
+        navigate('/admin');
+      } else {
+        navigate('/dashboard');
+      }
+
     } catch (error) {
       console.error('Google login error:', error);
-      alert('Google login failed. Please try again.');
+      alert(`Google login failed: ${error.message}. Please try again.`);
+    } finally {
       setLoading(false);
     }
   };
 
   return (
-   <div className="auth-page">
-  <div className="auth-box">
-    <h1 className="auth-title">{isLogin ? 'Login' : 'Sign Up'} to Flash-doc</h1>
+    <div className="auth-page">
+      <div className="auth-box">
+        <h1 className="auth-title">{isLogin ? 'Login' : 'Sign Up'} to Flash-doc</h1>
 
-    <div className="auth-form">
-      <label>Email</label>
-      <input
-        type="email"
-        placeholder="Enter your email"
-        value={email}
-        onChange={e => setEmail(e.target.value)}
-        className="auth-input"
-      />
+        <div className="auth-form">
+          <label>Email</label>
+          <input
+            type="email"
+            placeholder="Enter your email"
+            value={email}
+            onChange={e => setEmail(e.target.value)}
+            className="auth-input"
+          />
 
-      <label>Password</label>
-      <input
-        type="password"
-        placeholder="Enter your password"
-        value={password}
-        onChange={e => setPassword(e.target.value)}
-        className="auth-input"
-      />
+          <label>Password</label>
+          <input
+            type="password"
+            placeholder="Enter your password"
+            value={password}
+            onChange={e => setPassword(e.target.value)}
+            className="auth-input"
+          />
 
-      {!isLogin && (
-        <>
-          <label>Role</label>
-          <select value={role} onChange={e => setRole(e.target.value)} className="auth-select">
-            <option value="student">Student</option>
-          </select>
-        </>
-      )}
+          {!isLogin && (
+            <>
+              <label>Role</label>
+              <select value={role} onChange={e => setRole(e.target.value)} className="auth-select">
+                <option value="student">Student</option>
+              </select>
+            </>
+          )}
 
-      {isLogin && (
-        <p
-          className="forgot-password"
-          style={{ cursor: 'pointer', color: '#3182ce', marginBottom: '1rem' }}
-          onClick={() => navigate('/forgot-password')}
-        >
-          Forgot Password?
-        </p>
-      )}
+          {/* {isLogin && (
+            <p
+              className="forgot-password"
+              style={{ cursor: 'pointer', color: '#3182ce', marginBottom: '1rem' }}
+              onClick={() => navigate('/forgot-password')}
+            >
+              Forgot Password?
+            </p>
+          )} */}
 
-      <button onClick={handleSubmit} className="auth-button" disabled={loading}>
-        {loading ? 'Please wait...' : (isLogin ? 'Login' : 'Sign Up')}
-      </button>
+          <button onClick={handleSubmit} className="auth-button" disabled={loading}>
+            {loading ? 'Please wait...' : (isLogin ? 'Login' : 'Sign Up')}
+          </button>
 
-      <button onClick={handleGoogleLogin} className="auth-button google" disabled={loading}>
-        {loading ? 'Please wait...' : `${isLogin ? 'Login' : 'Sign Up'} with Google`}
-      </button>
+          <button onClick={handleGoogleLogin} className="auth-button google" disabled={loading}>
+            {loading ? 'Please wait...' : `${isLogin ? 'Login' : 'Sign Up'} with Google`}
+          </button>
 
-      <p className="switch-text">
-        {isLogin ? "Don't have an account?" : 'Already have an account?'}{' '}
-        <span
-          className="switch-link"
-          onClick={() => navigate(isLogin ? '/signup' : '/login')}
-        >
-          {isLogin ? 'Sign Up' : 'Login'}
-        </span>
-      </p>
-    </div>
-  </div>
+          <p className="switch-text">
+            {isLogin ? "Don't have an account?" : 'Already have an account?'}{' '}
+            <span
+              className="switch-link"
+              onClick={() => navigate(isLogin ? '/signup' : '/login')}
+            >
+              {isLogin ? 'Sign Up' : 'Login'}
+            </span>
+          </p>
+        </div>
+      </div>
 
       <style>{`
         * {

@@ -10,8 +10,32 @@ const QuestionForm = () => {
   const [correct, setCorrect] = useState("");
   const [difficulty, setDifficulty] = useState("easy");
   const [explanation, setExplanation] = useState("");
+  const [imageUrl, setImageUrl] = useState("");
 
   // Fetch flashcard if editing
+
+  const handleImageUpload = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    const filePath = `flashcards/${Date.now()}-${file.name}`;
+
+    const { error } = await supabase.storage
+      .from("flashcards-images")
+      .upload(filePath, file);
+
+    if (error) {
+      console.error("Image upload error:", error.message);
+      alert("Image upload failed");
+      return;
+    }
+
+    const {
+      data: { publicUrl },
+    } = supabase.storage.from("flashcards-images").getPublicUrl(filePath);
+
+    setImageUrl(publicUrl);
+  };
   useEffect(() => {
     const fetchQuestion = async () => {
       if (qid) {
@@ -29,6 +53,8 @@ const QuestionForm = () => {
           setCorrect(data.correct);
           setDifficulty(data.difficulty || "medium");
           setExplanation(data.explanation || "");
+          setImageUrl(data.image_url || "");
+
         }
       }
     };
@@ -55,6 +81,7 @@ const QuestionForm = () => {
         correct,
         difficulty,
         explanation,
+        image_url: imageUrl,
         subject_id: subjectId,
         subject_name: subjectData.name || null,
       };
@@ -136,6 +163,21 @@ const QuestionForm = () => {
               onBlur={(e) => (e.target.style.borderColor = "#e2e8f0")}
             />
           </div>
+
+          <div>
+            <label>Optional Image</label>
+            <input type="file" accept="image/*" onChange={handleImageUpload} />
+            {imageUrl && (
+              <div>
+                <img src={imageUrl} alt="Flashcard" style={{ maxWidth: "200px" }} />
+                <button type="button" onClick={() => setImageUrl("")}>
+                  Remove Image
+                </button>
+              </div>
+            )}
+          </div>
+
+
 
           <div style={styles.buttonContainer}>
             <button

@@ -68,10 +68,10 @@ useEffect(() => {
     incorrect: { easy: 3, medium: 5, hard: 7 }
   };
 
-  // Fetch questions
+  // Fetch questions - Updated to include image_url
   useEffect(() => {
     const fetchQuestions = async () => {
-      let query = supabase.from("flashcards").select("*");
+      let query = supabase.from("flashcards").select("*, image_url");
 
       if (mode === "challenge") {
         if (subject === "all") {
@@ -322,19 +322,7 @@ useEffect(() => {
         </div>
 
         <div style={styles.header}>
-          <div
-            style={{
-              ...styles.headerItem,
-              background:
-                timeLeft <= 60
-                  ? "linear-gradient(135deg, #e74c3c 0%, #c0392b 100%)"
-                  : "linear-gradient(135deg, #27374d 0%, #526d82 100%)",
-              color: "white",
-              animation: timeLeft <= 10 ? "pulse 1s infinite" : "none"
-            }}
-          >
-            ⏱️ {formatTime(timeLeft)}
-          </div>
+          
           <div style={styles.headerItem}>
             Question {currentQuestionIndex + 1} of {questions.length}
           </div>
@@ -343,8 +331,34 @@ useEffect(() => {
 
         <div style={showAnswer ? styles.cardBack : styles.cardFront}>
           {!showAnswer ? (
-            <h2 style={styles.questionText}>{currentQuestion?.question}</h2>
+            // Question content with optional image
+            currentQuestion?.image_url ? (
+              <div style={styles.splitLayout}>
+                <div style={styles.imageSection}>
+                  <img 
+                    src={currentQuestion.image_url} 
+                    alt="Question illustration"
+                    style={styles.questionImage}
+                    onError={(e) => {
+                      e.target.style.display = 'none';
+                      e.target.nextSibling.style.display = 'block';
+                    }}
+                  />
+                  <div style={{...styles.imageError, display: 'none'}}>
+                    🖼️ Image not available
+                  </div>
+                </div>
+                <div style={styles.textSection}>
+                  <h2 style={styles.questionText}>{currentQuestion?.question}</h2>
+                </div>
+              </div>
+            ) : (
+              <div style={styles.textOnly}>
+                <h2 style={styles.questionText}>{currentQuestion?.question}</h2>
+              </div>
+            )
           ) : (
+            // Answer content
             <>
               <h3 style={styles.answerText}>
                 Answer: {currentQuestion?.correct}
@@ -427,7 +441,7 @@ useEffect(() => {
   );
 }
 
-// STYLES SECTION - Responsive with no white corners and smaller container
+// STYLES SECTION - Updated with image support
 const styles = {
   container: {
     minHeight: '100vh',
@@ -528,6 +542,55 @@ const styles = {
     flexDirection: 'column',
     justifyContent: 'center',
     textAlign: 'center'
+  },
+
+  // New styles for split layout
+  splitLayout: {
+    display: 'flex',
+    height: '100%',
+    gap: window.innerWidth <= 480 ? '1rem' : '1.5rem',
+    alignItems: 'center',
+    justifyContent: 'space-between'
+  },
+
+  imageSection: {
+    flex: 1,
+    display: 'flex',
+    justifyContent: 'center',
+    alignItems: 'center',
+    minHeight: window.innerWidth <= 480 ? '100px' : '120px',
+    maxHeight: window.innerWidth <= 480 ? '120px' : '150px'
+  },
+
+  textSection: {
+    flex: 1,
+    display: 'flex',
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: window.innerWidth <= 480 ? '0.5rem' : '1rem'
+  },
+
+  textOnly: {
+    display: 'flex',
+    justifyContent: 'center',
+    alignItems: 'center',
+    height: '100%',
+    padding: window.innerWidth <= 480 ? '1rem' : '1.5rem'
+  },
+
+  questionImage: {
+    maxWidth: '100%',
+    maxHeight: '100%',
+    objectFit: 'contain',
+    borderRadius: '8px',
+    boxShadow: '0 4px 12px rgba(0, 0, 0, 0.15)'
+  },
+
+  imageError: {
+    color: '#6c757d',
+    fontSize: window.innerWidth <= 480 ? '0.8rem' : '0.9rem',
+    textAlign: 'center',
+    fontStyle: 'italic'
   },
 
   questionText: {
@@ -652,5 +715,27 @@ const styles = {
     padding: '0'
   }
 };
+
+// Add responsive media query for mobile stacking
+const mobileStyles = window.innerWidth <= 768 ? {
+  splitLayout: {
+    ...styles.splitLayout,
+    flexDirection: 'column',
+    gap: '1rem'
+  },
+  imageSection: {
+    ...styles.imageSection,
+    flex: 'none',
+    maxHeight: '100px'
+  },
+  textSection: {
+    ...styles.textSection,
+    flex: 'none',
+    padding: '0.5rem'
+  }
+} : {};
+
+// Merge mobile styles if on mobile
+Object.assign(styles, mobileStyles);
 
 export default Flashcard;
