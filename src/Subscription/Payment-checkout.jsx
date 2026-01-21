@@ -8,402 +8,359 @@ export default function PaymentCheckout() {
   const location = useLocation();
   const selectedPlan = location.state?.plan || "monthly";
   const [paymentMethod, setPaymentMethod] = useState("card");
-  
-  // Card state
-  const [cardNumber, setCardNumber] = useState("");
-  const [expiry, setExpiry] = useState("");
-  const [cvv, setCvv] = useState("");
-  const [cardName, setCardName] = useState("");
-  
-  // UPI state
-  const [upiId, setUpiId] = useState("");
-  
-  // Net Banking state
-  const [bank, setBank] = useState("");
+
+  const [loading, setLoading] = useState(false);
 
   const handlePayment = (e) => {
     e.preventDefault();
-    // Add payment processing logic here
-    navigate("/thanks");
+    setLoading(true);
+    // Simulate payment processing
+    setTimeout(() => {
+      setLoading(false);
+      navigate("/thanks");
+    }, 2000);
   };
-
-  const containerStyle = {
-    minHeight: '100vh',
-    width: '100%',
-    background: 'linear-gradient(135deg, #e8f0f5 0%, #f5f8fa 100%)',
-    padding: window.innerWidth <= 768 ? '1rem' : '2rem',
-    display: 'flex',
-    flexDirection: 'column',
-    alignItems: 'center',
-    fontFamily: "'Inter', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif",
-    boxSizing: 'border-box'
-  };
-
-  const checkoutCardStyle = {
-    background: 'rgba(255, 255, 255, 0.95)',
-    backdropFilter: 'blur(25px)',
-    borderRadius: window.innerWidth <= 768 ? '16px' : '24px',
-    padding: window.innerWidth <= 768 ? '1.5rem' : '3rem',
-    boxShadow: '0 20px 40px rgba(0, 0, 0, 0.15), 0 8px 20px rgba(0, 0, 0, 0.1)',
-    border: '1px solid rgba(255, 255, 255, 0.3)',
-    maxWidth: '600px',
-    width: '100%',
-    marginBottom: '2rem'
-  };
-
-  const titleStyle = {
-    color: '#2c3e50',
-    fontSize: window.innerWidth <= 768 ? '1.8rem' : '2.5rem',
-    marginBottom: '0.5rem',
-    textAlign: 'center',
-    fontWeight: '700',
-    textShadow: '0 2px 4px rgba(0, 0, 0, 0.1)'
-  };
-
-  const subtitleStyle = {
-    color: '#7f8c8d',
-    fontSize: window.innerWidth <= 768 ? '0.9rem' : '1.1rem',
-    textAlign: 'center',
-    marginBottom: '2rem',
-    fontWeight: '400',
-    lineHeight: '1.4'
-  };
-
-  const sectionStyle = {
-    marginBottom: '2rem'
-  };
-
-  const sectionTitleStyle = {
-    color: '#2c3e50',
-    fontSize: window.innerWidth <= 768 ? '1.1rem' : '1.3rem',
-    fontWeight: '600',
-    marginBottom: '1rem',
-    borderBottom: '2px solid #e8f0f5',
-    paddingBottom: '0.5rem'
-  };
-
-  const orderSummaryStyle = {
-    background: 'rgba(52, 152, 219, 0.1)',
-    borderRadius: window.innerWidth <= 768 ? '12px' : '16px',
-    padding: window.innerWidth <= 768 ? '1rem' : '1.5rem',
-    marginBottom: '2rem',
-    border: '1px solid rgba(52, 152, 219, 0.2)'
-  };
-
-  const summaryRowStyle = {
-    display: 'flex',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: '0.5rem',
-    fontSize: window.innerWidth <= 768 ? '0.9rem' : '1rem'
-  };
-
-  const summaryTotalStyle = {
-    ...summaryRowStyle,
-    fontWeight: '700',
-    fontSize: window.innerWidth <= 768 ? '1rem' : '1.2rem',
-    color: '#2c3e50',
-    borderTop: '2px solid rgba(52, 152, 219, 0.3)',
-    paddingTop: '0.5rem',
-    marginTop: '1rem',
-    marginBottom: '0'
-  };
-
-  const radioGroupStyle = {
-    display: 'flex',
-    gap: window.innerWidth <= 768 ? '0.5rem' : '1rem',
-    marginBottom: '1.5rem',
-    flexWrap: 'wrap',
-    flexDirection: window.innerWidth <= 768 ? 'column' : 'row'
-  };
-
-  const radioLabelStyle = {
-    display: 'flex',
-    alignItems: 'center',
-    gap: '0.5rem',
-    padding: window.innerWidth <= 768 ? '0.8rem 1rem' : '0.8rem 1.5rem',
-    background: 'rgba(255, 255, 255, 0.8)',
-    borderRadius: '12px',
-    border: '2px solid transparent',
-    cursor: 'pointer',
-    transition: 'all 0.3s ease',
-    fontSize: window.innerWidth <= 768 ? '0.9rem' : '1rem',
-    fontWeight: '500',
-    width: window.innerWidth <= 768 ? '100%' : 'auto'
-  };
-
-  const radioInputStyle = {
-    margin: 0,
-    width: '18px',
-    height: '18px'
-  };
-
-  const formGroupStyle = {
-    marginBottom: '1.5rem'
-  };
-
-  const labelStyle = {
-    display: 'block',
-    color: '#2c3e50',
-    fontSize: '1rem',
-    fontWeight: '600',
-    marginBottom: '0.5rem'
-  };
-
-  const inputStyle = {
-    width: '100%',
-    padding: window.innerWidth <= 768 ? '0.8rem' : '1rem',
-    border: '2px solid #e8f0f5',
-    borderRadius: '12px',
-    fontSize: window.innerWidth <= 768 ? '0.9rem' : '1rem',
-    transition: 'all 0.3s ease',
-    background: 'rgba(255, 255, 255, 0.9)',
-    boxSizing: 'border-box'
-  };
-
-  const selectStyle = {
-    ...inputStyle,
-    cursor: 'pointer'
-  };
-
-  const cardRowStyle = {
-    display: 'flex',
-    gap: window.innerWidth <= 768 ? '0.5rem' : '1rem',
-    marginBottom: '1.5rem',
-    flexDirection: window.innerWidth <= 480 ? 'column' : 'row'
-  };
-
-  const cardColStyle = {
-    flex: 1
-  };
-
-  const payButtonStyle = {
-    background: 'linear-gradient(135deg, #27ae60 0%, #2ecc71 100%)',
-    color: 'white',
-    border: 'none',
-    padding: window.innerWidth <= 768 ? '1rem 1.5rem' : '1.2rem 2rem',
-    borderRadius: '16px',
-    fontSize: window.innerWidth <= 768 ? '1rem' : '1.2rem',
-    fontWeight: '700',
-    cursor: 'pointer',
-    width: '100%',
-    transition: 'all 0.3s ease',
-    boxShadow: '0 10px 30px rgba(39, 174, 96, 0.3)',
-    textTransform: 'uppercase',
-    letterSpacing: '0.5px'
-  };
-
-  const [hoveredButton, setHoveredButton] = useState(false);
 
   const planDetails = {
-    monthly: { name: 'Monthly Plan', price: 299, period: 'month' },
-    yearly: { name: 'Yearly Plan', price: 2999, period: 'year' }
+    monthly: { name: 'Monthly Pro', price: 299, period: 'month' },
+    yearly: { name: 'Yearly Pro', price: 2499, period: 'year' }
   };
 
   const currentPlan = planDetails[selectedPlan];
 
   return (
-    <>
+    <div className="checkout-page">
       <Navbar />
-      <div style={containerStyle}>
-        <div style={checkoutCardStyle}>
-          <h1 style={titleStyle}>Complete Your Payment</h1>
-          <p style={subtitleStyle}>Secure checkout powered by industry-standard encryption</p>
-          
-          {/* Order Summary */}
-          <div style={orderSummaryStyle}>
-            <h3 style={{...sectionTitleStyle, marginBottom: '1rem', borderBottom: 'none'}}>Order Summary</h3>
-            <div style={summaryRowStyle}>
-              <span>{currentPlan.name}</span>
-              <span>₹{currentPlan.price}</span>
-            </div>
-            <div style={summaryRowStyle}>
-              <span>Taxes & Fees</span>
-              <span>₹0</span>
-            </div>
-            <div style={summaryTotalStyle}>
-              <span>Total Amount</span>
-              <span>₹{currentPlan.price}</span>
-            </div>
-          </div>
 
-          {/* Payment Method Selection */}
-          <div style={sectionStyle}>
-            <h3 style={sectionTitleStyle}>Payment Method</h3>
-            <div style={radioGroupStyle}>
-              <label 
-                style={{
-                  ...radioLabelStyle,
-                  borderColor: paymentMethod === "card" ? '#3498db' : 'transparent',
-                  background: paymentMethod === "card" ? 'rgba(52, 152, 219, 0.1)' : 'rgba(255, 255, 255, 0.8)'
-                }}
-              >
-                <input
-                  type="radio"
-                  value="card"
-                  checked={paymentMethod === "card"}
-                  onChange={(e) => setPaymentMethod(e.target.value)}
-                  style={radioInputStyle}
-                />
-                💳 Credit/Debit Card
-              </label>
-              <label 
-                style={{
-                  ...radioLabelStyle,
-                  borderColor: paymentMethod === "upi" ? '#3498db' : 'transparent',
-                  background: paymentMethod === "upi" ? 'rgba(52, 152, 219, 0.1)' : 'rgba(255, 255, 255, 0.8)'
-                }}
-              >
-                <input
-                  type="radio"
-                  value="upi"
-                  checked={paymentMethod === "upi"}
-                  onChange={(e) => setPaymentMethod(e.target.value)}
-                  style={radioInputStyle}
-                />
-                📱 UPI
-              </label>
-              <label 
-                style={{
-                  ...radioLabelStyle,
-                  borderColor: paymentMethod === "netbanking" ? '#3498db' : 'transparent',
-                  background: paymentMethod === "netbanking" ? 'rgba(52, 152, 219, 0.1)' : 'rgba(255, 255, 255, 0.8)'
-                }}
-              >
-                <input
-                  type="radio"
-                  value="netbanking"
-                  checked={paymentMethod === "netbanking"}
-                  onChange={(e) => setPaymentMethod(e.target.value)}
-                  style={radioInputStyle}
-                />
-                🏦 Net Banking
-              </label>
-            </div>
-          </div>
+      <main className="checkout-container">
+        <div className="mesh-bg"></div>
 
-          {/* Payment Form */}
-          <form onSubmit={handlePayment}>
-            {paymentMethod === "card" && (
-              <div style={sectionStyle}>
-                <h3 style={sectionTitleStyle}>Card Details</h3>
-                <div style={formGroupStyle}>
-                  <label style={labelStyle}>Cardholder Name</label>
-                  <input
-                    type="text"
-                    value={cardName}
-                    onChange={(e) => setCardName(e.target.value)}
-                    placeholder="Enter cardholder name"
-                    style={inputStyle}
-                    required
-                  />
-                </div>
-                <div style={formGroupStyle}>
-                  <label style={labelStyle}>Card Number</label>
-                  <input
-                    type="text"
-                    value={cardNumber}
-                    onChange={(e) => setCardNumber(e.target.value)}
-                    placeholder="1234 5678 9012 3456"
-                    style={inputStyle}
-                    required
-                  />
-                </div>
-                <div style={cardRowStyle}>
-                  <div style={cardColStyle}>
-                    <label style={labelStyle}>Expiry Date</label>
-                    <input
-                      type="text"
-                      value={expiry}
-                      onChange={(e) => setExpiry(e.target.value)}
-                      placeholder="MM/YY"
-                      style={inputStyle}
-                      required
-                    />
+        <div className="checkout-wrapper">
+          <div className="checkout-form-section">
+            <header className="checkout-header">
+              <h1>Complete Upgrade</h1>
+              <p>Securely finalize your subscription to Memora Pro.</p>
+            </header>
+
+            <div className="payment-methods">
+              <button
+                className={`method-btn ${paymentMethod === 'card' ? 'active' : ''}`}
+                onClick={() => setPaymentMethod('card')}
+              >
+                <span className="icon">💳</span> Card
+              </button>
+              <button
+                className={`method-btn ${paymentMethod === 'upi' ? 'active' : ''}`}
+                onClick={() => setPaymentMethod('upi')}
+              >
+                <span className="icon">📱</span> UPI
+              </button>
+              <button
+                className={`method-btn ${paymentMethod === 'netbanking' ? 'active' : ''}`}
+                onClick={() => setPaymentMethod('netbanking')}
+              >
+                <span className="icon">🏦</span> Bank
+              </button>
+            </div>
+
+            <form onSubmit={handlePayment} className="actual-form">
+              {paymentMethod === 'card' && (
+                <div className="card-fields animate-fade-in">
+                  <div className="input-group">
+                    <label>Cardholder Name</label>
+                    <input type="text" placeholder="Dr. Jane Smith" required />
                   </div>
-                  <div style={cardColStyle}>
-                    <label style={labelStyle}>CVV</label>
-                    <input
-                      type="password"
-                      value={cvv}
-                      onChange={(e) => setCvv(e.target.value)}
-                      placeholder="123"
-                      style={inputStyle}
-                      required
-                    />
+                  <div className="input-group">
+                    <label>Card Number</label>
+                    <input type="text" placeholder="xxxx xxxx xxxx xxxx" required />
+                  </div>
+                  <div className="input-row">
+                    <div className="input-group">
+                      <label>Expiry</label>
+                      <input type="text" placeholder="MM/YY" required />
+                    </div>
+                    <div className="input-group">
+                      <label>CVV</label>
+                      <input type="password" placeholder="***" required />
+                    </div>
                   </div>
                 </div>
-              </div>
-            )}
+              )}
 
-            {paymentMethod === "upi" && (
-              <div style={sectionStyle}>
-                <h3 style={sectionTitleStyle}>UPI Details</h3>
-                <div style={formGroupStyle}>
-                  <label style={labelStyle}>UPI ID</label>
-                  <input
-                    type="text"
-                    value={upiId}
-                    onChange={(e) => setUpiId(e.target.value)}
-                    placeholder="yourname@upi"
-                    style={inputStyle}
-                    required
-                  />
+              {paymentMethod === 'upi' && (
+                <div className="upi-fields animate-fade-in">
+                  <div className="input-group">
+                    <label>UPI ID</label>
+                    <input type="text" placeholder="doctor@okaxis" required />
+                  </div>
                 </div>
-              </div>
-            )}
+              )}
 
-            {paymentMethod === "netbanking" && (
-              <div style={sectionStyle}>
-                <h3 style={sectionTitleStyle}>Net Banking Details</h3>
-                <div style={formGroupStyle}>
-                  <label style={labelStyle}>Select Your Bank</label>
-                  <select
-                    value={bank}
-                    onChange={(e) => setBank(e.target.value)}
-                    style={selectStyle}
-                    required
-                  >
-                    <option value="">Choose your bank</option>
-                    <option value="hdfc">HDFC Bank</option>
-                    <option value="sbi">State Bank of India</option>
-                    <option value="icici">ICICI Bank</option>
-                    <option value="axis">Axis Bank</option>
-                    <option value="kotak">Kotak Mahindra Bank</option>
-                    <option value="pnb">Punjab National Bank</option>
-                  </select>
+              {paymentMethod === 'netbanking' && (
+                <div className="bank-fields animate-fade-in">
+                  <div className="input-group">
+                    <label>Select Bank</label>
+                    <select required>
+                      <option value="">Choose bank...</option>
+                      <option>HDFC Bank</option>
+                      <option>ICICI Bank</option>
+                      <option>SBI</option>
+                      <option>Axis Bank</option>
+                    </select>
+                  </div>
                 </div>
-              </div>
-            )}
+              )}
 
-            <button 
-              type="submit"
-              style={{
-                ...payButtonStyle,
-                ...(hoveredButton ? {
-                  transform: 'translateY(-2px)',
-                  boxShadow: '0 15px 35px rgba(39, 174, 96, 0.4)',
-                  background: 'linear-gradient(135deg, #229954 0%, #27ae60 100%)'
-                } : {})
-              }}
-              onMouseEnter={() => setHoveredButton(true)}
-              onMouseLeave={() => setHoveredButton(false)}
-            >
-              Pay ₹{currentPlan.price} Now
-            </button>
-          </form>
-
-          <div style={{
-            textAlign: 'center',
-            marginTop: '1.5rem',
-            color: '#7f8c8d',
-            fontSize: '0.9rem'
-          }}>
-            🔒 Your payment information is secure and encrypted
+              <button type="submit" className="btn-pay" disabled={loading}>
+                {loading ? <span className="loader"></span> : `Pay ₹${currentPlan.price}`}
+              </button>
+            </form>
           </div>
+
+          <aside className="order-summary-box">
+            <h3>Order Summary</h3>
+            <div className="summary-details">
+              <div className="summary-row">
+                <span>{currentPlan.name}</span>
+                <span>₹{currentPlan.price}</span>
+              </div>
+              <div className="summary-row">
+                <span>Platform Fee</span>
+                <span className="free">FREE</span>
+              </div>
+              <div className="summary-row total">
+                <span>Total Amount</span>
+                <span>₹{currentPlan.price}</span>
+              </div>
+            </div>
+
+            <div className="security-badge">
+              <span className="icon">🔒</span>
+              <p>256-bit SSL Encrypted Payment</p>
+            </div>
+          </aside>
         </div>
-      </div>
+      </main>
+
       <Footer />
-    </>
+
+      <style>{`
+        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
+
+        .checkout-page {
+          min-height: 100vh;
+          background: #0f172a;
+          font-family: 'Plus Jakarta Sans', sans-serif;
+          color: white;
+        }
+
+        .checkout-container {
+          position: relative;
+          padding: 8rem 2rem 4rem;
+          min-height: calc(100vh - 80px);
+          display: flex;
+          justify-content: center;
+          overflow: hidden;
+        }
+
+        .mesh-bg {
+          position: absolute;
+          top: 0; left: 0; right: 0; bottom: 0;
+          background: 
+            radial-gradient(circle at 100% 0%, rgba(37, 99, 235, 0.1) 0%, transparent 50%),
+            radial-gradient(circle at 0% 100%, rgba(56, 189, 248, 0.05) 0%, transparent 50%);
+          z-index: 1;
+        }
+
+        .checkout-wrapper {
+          position: relative;
+          z-index: 2;
+          width: 100%;
+          max-width: 1100px;
+          display: grid;
+          grid-template-columns: 1.5fr 1fr;
+          gap: 3rem;
+        }
+
+        .checkout-form-section {
+          background: rgba(30, 41, 59, 0.5);
+          backdrop-filter: blur(20px);
+          border: 1px solid rgba(255, 255, 255, 0.05);
+          border-radius: 32px;
+          padding: 3.5rem;
+        }
+
+        .checkout-header h1 {
+          font-size: 2.5rem;
+          font-weight: 800;
+          margin-bottom: 0.5rem;
+          letter-spacing: -1px;
+        }
+
+        .checkout-header p {
+          color: #94a3b8;
+          margin-bottom: 2.5rem;
+        }
+
+        .payment-methods {
+          display: grid;
+          grid-template-columns: repeat(3, 1fr);
+          gap: 1rem;
+          margin-bottom: 2.5rem;
+        }
+
+        .method-btn {
+          padding: 1rem;
+          background: rgba(255, 255, 255, 0.03);
+          border: 1px solid rgba(255, 255, 255, 0.1);
+          border-radius: 16px;
+          color: #94a3b8;
+          font-weight: 600;
+          cursor: pointer;
+          transition: all 0.2s;
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          gap: 0.5rem;
+        }
+
+        .method-btn.active {
+          background: rgba(37, 99, 235, 0.1);
+          border-color: #2563eb;
+          color: white;
+        }
+
+        .actual-form {
+          display: flex;
+          flex-direction: column;
+          gap: 1.5rem;
+        }
+
+        .input-group {
+          display: flex;
+          flex-direction: column;
+          gap: 0.75rem;
+        }
+
+        .input-row {
+          display: grid;
+          grid-template-columns: 1fr 1fr;
+          gap: 1rem;
+        }
+
+        .input-group label {
+          font-size: 0.875rem;
+          font-weight: 600;
+          color: #cbd5e1;
+        }
+
+        .input-group input, .input-group select {
+          background: rgba(15, 23, 42, 0.5);
+          border: 1px solid rgba(255, 255, 255, 0.1);
+          padding: 1rem;
+          border-radius: 14px;
+          color: white;
+          outline: none;
+          font-family: inherit;
+          transition: all 0.2s;
+        }
+
+        .input-group input:focus {
+          border-color: #2563eb;
+          box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.1);
+        }
+
+        .btn-pay {
+          background: #2563eb;
+          color: white;
+          padding: 1.25rem;
+          border: none;
+          border-radius: 16px;
+          font-weight: 700;
+          font-size: 1.125rem;
+          cursor: pointer;
+          transition: all 0.3s;
+          margin-top: 1rem;
+        }
+
+        .btn-pay:hover {
+          background: #1d4ed8;
+          transform: translateY(-2px);
+          box-shadow: 0 10px 25px -5px rgba(37, 99, 235, 0.4);
+        }
+
+        .order-summary-box {
+          background: rgba(30, 41, 59, 0.3);
+          border: 1px solid rgba(255, 255, 255, 0.05);
+          border-radius: 32px;
+          padding: 2.5rem;
+          height: fit-content;
+        }
+
+        .order-summary-box h3 {
+          font-size: 1.25rem;
+          margin-bottom: 2rem;
+        }
+
+        .summary-details {
+          display: flex;
+          flex-direction: column;
+          gap: 1.25rem;
+          margin-bottom: 2rem;
+        }
+
+        .summary-row {
+          display: flex;
+          justify-content: space-between;
+          color: #94a3b8;
+        }
+
+        .summary-row.total {
+          border-top: 1px solid rgba(255, 255, 255, 0.1);
+          padding-top: 1.25rem;
+          font-weight: 700;
+          color: white;
+          font-size: 1.25rem;
+        }
+
+        .free { color: #22c55e; font-weight: 700; }
+
+        .security-badge {
+          display: flex;
+          align-items: center;
+          gap: 1rem;
+          padding-top: 1.5rem;
+          border-top: 1px dashed rgba(255, 255, 255, 0.1);
+          color: #64748b;
+          font-size: 0.875rem;
+        }
+
+        .animate-fade-in {
+          animation: fadeIn 0.3s ease-out;
+        }
+
+        @keyframes fadeIn {
+          from { opacity: 0; transform: translateY(5px); }
+          to { opacity: 1; transform: translateY(0); }
+        }
+
+        .loader {
+          width: 24px;
+          height: 24px;
+          border: 3px solid rgba(255,255,255,0.3);
+          border-radius: 50%;
+          border-top-color: #fff;
+          animation: spin 1s linear infinite;
+          display: inline-block;
+        }
+
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        @media (max-width: 968px) {
+          .checkout-wrapper { grid-template-columns: 1fr; }
+          .checkout-form-section { padding: 2rem; }
+        }
+      `}</style>
+    </div>
   );
 }

@@ -1,0 +1,436 @@
+[
+    {
+        "json_agg": [
+            {
+                "object_type": "TABLE",
+                "table_schema": "public",
+                "table_name": "activities",
+                "column_name": null,
+                "data_type": null,
+                "is_nullable": null,
+                "policy_name": null,
+                "policy_definition": null
+            },
+            {
+                "object_type": "TABLE",
+                "table_schema": "public",
+                "table_name": "profiles",
+                "column_name": null,
+                "data_type": null,
+                "is_nullable": null,
+                "policy_name": null,
+                "policy_definition": null
+            },
+            {
+                "object_type": "TABLE",
+                "table_schema": "public",
+                "table_name": "subjects",
+                "column_name": null,
+                "data_type": null,
+                "is_nullable": null,
+                "policy_name": null,
+                "policy_definition": null
+            },
+            {
+                "object_type": "TABLE",
+                "table_schema": "public",
+                "table_name": "flashcards",
+                "column_name": null,
+                "data_type": null,
+                "is_nullable": null,
+                "policy_name": null,
+                "policy_definition": null
+            },
+            {
+                "object_type": "COLUMN",
+                "table_schema": "public",
+                "table_name": "activities",
+                "column_name": "id",
+                "data_type": "uuid",
+                "is_nullable": "NO",
+                "policy_name": null,
+                "policy_definition": null
+            },
+            {
+                "object_type": "COLUMN",
+                "table_schema": "public",
+                "table_name": "activities",
+                "column_name": "user_id",
+                "data_type": "uuid",
+                "is_nullable": "YES",
+                "policy_name": null,
+                "policy_definition": null
+            },
+            {
+                "object_type": "COLUMN",
+                "table_schema": "public",
+                "table_name": "profiles",
+                "column_name": "profile_completed",
+                "data_type": "boolean",
+                "is_nullable": "YES",
+                "policy_name": null,
+                "policy_definition": null
+            },
+            {
+                "object_type": "COLUMN",
+                "table_schema": "public",
+                "table_name": "profiles",
+                "column_name": "created_at",
+                "data_type": "timestamp with time zone",
+                "is_nullable": "YES",
+                "policy_name": null,
+                "policy_definition": null
+            },
+            {
+                "object_type": "COLUMN",
+                "table_schema": "public",
+                "table_name": "profiles",
+                "column_name": "current_streak",
+                "data_type": "integer",
+                "is_nullable": "YES",
+                "policy_name": null,
+                "policy_definition": null
+            },
+            {
+                "object_type": "COLUMN",
+                "table_schema": "public",
+                "table_name": "profiles",
+                "column_name": "questions_today",
+                "data_type": "integer",
+                "is_nullable": "YES",
+                "policy_name": null,
+                "policy_definition": null
+            },
+            {
+                "object_type": "COLUMN",
+                "table_schema": "public",
+                "table_name": "profiles",
+                "column_name": "last_study_date",
+                "data_type": "timestamp without time zone",
+                "is_nullable": "YES",
+                "policy_name": null,
+                "policy_definition": null
+            },
+            {
+                "object_type": "COLUMN",
+                "table_schema": "public",
+                "table_name": "profiles",
+                "column_name": "recent_activity",
+                "data_type": "jsonb",
+                "is_nullable": "YES",
+                "policy_name": null,
+                "policy_definition": null
+            },
+            {
+                "object_type": "COLUMN",
+                "table_schema": "public",
+                "table_name": "profiles",
+                "column_name": "longest_streak",
+                "data_type": "integer",
+                "is_nullable": "YES",
+                "policy_name": null,
+                "policy_definition": null
+            },
+            {
+                "object_type": "COLUMN",
+                "table_schema": "public",
+                "table_name": "profiles",
+                "column_name": "last_seen",
+                "data_type": "timestamp with time zone",
+                "is_nullable": "YES",
+                "policy_name": null,
+                "policy_definition": null
+            },
+            {
+                "object_type": "COLUMN",
+                "table_schema": "public",
+                "table_name": "subjects",
+                "column_name": "id",
+                "data_type": "uuid",
+                "is_nullable": "NO",
+                "policy_name": null,
+                "policy_definition": null
+            },
+            {
+                "object_type": "COLUMN",
+                "table_schema": "public",
+                "table_name": "subjects",
+                "column_name": "created_at",
+                "data_type": "timestamp without time zone",
+                "is_nullable": "YES",
+                "policy_name": null,
+                "policy_definition": null
+            },
+            {
+                "object_type": "COLUMN",
+                "table_schema": "public",
+                "table_name": "subjects",
+                "column_name": "updated_at",
+                "data_type": "timestamp without time zone",
+                "is_nullable": "YES",
+                "policy_name": null,
+                "policy_definition": null
+            },
+            {
+                "object_type": "COLUMN",
+                "table_schema": "public",
+                "table_name": "flashcards",
+                "column_name": "id",
+                "data_type": "uuid",
+                "is_nullable": "NO",
+                "policy_name": null,
+                "policy_definition": null
+            },
+            {
+                "object_type": "COLUMN",
+                "table_schema": "public",
+                "table_name": "flashcards",
+                "column_name": "subject_id",
+                "data_type": "uuid",
+                "is_nullable": "YES",
+                "policy_name": null,
+                "policy_definition": null
+            },
+            {
+                "object_type": "COLUMN",
+                "table_schema": "public",
+                "table_name": "flashcards",
+                "column_name": "created_at",
+                "data_type": "timestamp without time zone",
+                "is_nullable": "YES",
+                "policy_name": null,
+                "policy_definition": null
+            },
+            {
+                "object_type": "COLUMN",
+                "table_schema": "public",
+                "table_name": "flashcards",
+                "column_name": "updated_at",
+                "data_type": "timestamp without time zone",
+                "is_nullable": "YES",
+                "policy_name": null,
+                "policy_definition": null
+            },
+            {
+                "object_type": "COLUMN",
+                "table_schema": "public",
+                "table_name": "activities",
+                "column_name": "created_at",
+                "data_type": "timestamp without time zone",
+                "is_nullable": "YES",
+                "policy_name": null,
+                "policy_definition": null
+            },
+            {
+                "object_type": "COLUMN",
+                "table_schema": "public",
+                "table_name": "profiles",
+                "column_name": "id",
+                "data_type": "uuid",
+                "is_nullable": "NO",
+                "policy_name": null,
+                "policy_definition": null
+            },
+            {
+                "object_type": "COLUMN",
+                "table_schema": "public",
+                "table_name": "activities",
+                "column_name": "action",
+                "data_type": "text",
+                "is_nullable": "NO",
+                "policy_name": null,
+                "policy_definition": null
+            },
+            {
+                "object_type": "COLUMN",
+                "table_schema": "public",
+                "table_name": "activities",
+                "column_name": "details",
+                "data_type": "text",
+                "is_nullable": "YES",
+                "policy_name": null,
+                "policy_definition": null
+            },
+            {
+                "object_type": "COLUMN",
+                "table_schema": "public",
+                "table_name": "activities",
+                "column_name": "subject",
+                "data_type": "text",
+                "is_nullable": "YES",
+                "policy_name": null,
+                "policy_definition": null
+            },
+            {
+                "object_type": "COLUMN",
+                "table_schema": "public",
+                "table_name": "activities",
+                "column_name": "severity",
+                "data_type": "text",
+                "is_nullable": "YES",
+                "policy_name": null,
+                "policy_definition": null
+            },
+            {
+                "object_type": "COLUMN",
+                "table_schema": "public",
+                "table_name": "flashcards",
+                "column_name": "subject_name",
+                "data_type": "text",
+                "is_nullable": "YES",
+                "policy_name": null,
+                "policy_definition": null
+            },
+            {
+                "object_type": "COLUMN",
+                "table_schema": "public",
+                "table_name": "flashcards",
+                "column_name": "image_url",
+                "data_type": "text",
+                "is_nullable": "YES",
+                "policy_name": null,
+                "policy_definition": null
+            },
+            {
+                "object_type": "COLUMN",
+                "table_schema": "public",
+                "table_name": "profiles",
+                "column_name": "full_name",
+                "data_type": "text",
+                "is_nullable": "YES",
+                "policy_name": null,
+                "policy_definition": null
+            },
+            {
+                "object_type": "COLUMN",
+                "table_schema": "public",
+                "table_name": "profiles",
+                "column_name": "year_of_study",
+                "data_type": "text",
+                "is_nullable": "YES",
+                "policy_name": null,
+                "policy_definition": null
+            },
+            {
+                "object_type": "COLUMN",
+                "table_schema": "public",
+                "table_name": "flashcards",
+                "column_name": "question",
+                "data_type": "text",
+                "is_nullable": "NO",
+                "policy_name": null,
+                "policy_definition": null
+            },
+            {
+                "object_type": "COLUMN",
+                "table_schema": "public",
+                "table_name": "profiles",
+                "column_name": "role",
+                "data_type": "text",
+                "is_nullable": "YES",
+                "policy_name": null,
+                "policy_definition": null
+            },
+            {
+                "object_type": "COLUMN",
+                "table_schema": "public",
+                "table_name": "flashcards",
+                "column_name": "correct",
+                "data_type": "text",
+                "is_nullable": "NO",
+                "policy_name": null,
+                "policy_definition": null
+            },
+            {
+                "object_type": "COLUMN",
+                "table_schema": "public",
+                "table_name": "profiles",
+                "column_name": "email",
+                "data_type": "text",
+                "is_nullable": "YES",
+                "policy_name": null,
+                "policy_definition": null
+            },
+            {
+                "object_type": "COLUMN",
+                "table_schema": "public",
+                "table_name": "subjects",
+                "column_name": "name",
+                "data_type": "text",
+                "is_nullable": "NO",
+                "policy_name": null,
+                "policy_definition": null
+            },
+            {
+                "object_type": "COLUMN",
+                "table_schema": "public",
+                "table_name": "flashcards",
+                "column_name": "difficulty",
+                "data_type": "text",
+                "is_nullable": "YES",
+                "policy_name": null,
+                "policy_definition": null
+            },
+            {
+                "object_type": "COLUMN",
+                "table_schema": "public",
+                "table_name": "flashcards",
+                "column_name": "explanation",
+                "data_type": "text",
+                "is_nullable": "YES",
+                "policy_name": null,
+                "policy_definition": null
+            },
+            {
+                "object_type": "POLICY",
+                "table_schema": "public",
+                "table_name": "profiles",
+                "column_name": null,
+                "data_type": null,
+                "is_nullable": null,
+                "policy_name": "Admins can view all profiles",
+                "policy_definition": "Command: SELECT | Roles: {public} | Using: (auth.uid() = '1934335c-96cb-4dc6-9023-1583f9ba3127'::uuid) | With Check: true"
+            },
+            {
+                "object_type": "POLICY",
+                "table_schema": "public",
+                "table_name": "profiles",
+                "column_name": null,
+                "data_type": null,
+                "is_nullable": null,
+                "policy_name": "Users can insert their own profile",
+                "policy_definition": "Command: INSERT | Roles: {public} | Using: true | With Check: (auth.uid() = id)"
+            },
+            {
+                "object_type": "POLICY",
+                "table_schema": "public",
+                "table_name": "profiles",
+                "column_name": null,
+                "data_type": null,
+                "is_nullable": null,
+                "policy_name": "Users can update their own profile",
+                "policy_definition": "Command: UPDATE | Roles: {public} | Using: (auth.uid() = id) | With Check: (auth.uid() = id)"
+            },
+            {
+                "object_type": "POLICY",
+                "table_schema": "public",
+                "table_name": "profiles",
+                "column_name": null,
+                "data_type": null,
+                "is_nullable": null,
+                "policy_name": "Users can view their own profile",
+                "policy_definition": "Command: SELECT | Roles: {public} | Using: (auth.uid() = id) | With Check: true"
+            },
+            {
+                "object_type": "BUCKET",
+                "table_schema": "storage",
+                "table_name": "flashcards-images",
+                "column_name": null,
+                "data_type": "public: true | file_size_limit: unlimited | allowed_mime_types: all",
+                "is_nullable": null,
+                "policy_name": null,
+                "policy_definition": null
+            }
+        ]
+    }
+]

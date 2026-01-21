@@ -1,6 +1,20 @@
 import React, { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { supabase } from "../supabase/supabaseClient";
+import {
+  Users,
+  BookOpen,
+  Activity,
+  Database,
+  Settings,
+  BarChart3,
+  Shield,
+  Zap,
+  TrendingUp,
+  Clock,
+  CheckCircle2,
+  AlertCircle
+} from 'lucide-react';
 
 function AdminDashboard() {
   const [adminName, setAdminName] = useState("");
@@ -10,47 +24,81 @@ function AdminDashboard() {
   const [totalSubjects, setTotalSubjects] = useState(0);
   const [systemStatus, setSystemStatus] = useState("Operational");
   const [recentActivities, setRecentActivities] = useState([
-    { 
-      action: "User Registration", 
-      details: "New user account created", 
-      user: "john.doe@email.com", 
-      time: "14:35", 
-      severity: "info" 
+    {
+      action: "User Registration",
+      details: "New user account created",
+      user: "john.doe@email.com",
+      time: "14:35",
+      severity: "info"
     },
-    { 
-      action: "Content Management", 
-      details: "Question bank updated", 
-      subject: "Anatomy", 
-      time: "13:28", 
-      severity: "success" 
+    {
+      action: "Content Management",
+      details: "Question bank updated",
+      subject: "Anatomy",
+      time: "13:28",
+      severity: "success"
     },
-    { 
-      action: "Subscription Update", 
-      details: "Premium subscription activated", 
-      user: "jane.smith@email.com", 
-      time: "12:15", 
-      severity: "success" 
+    {
+      action: "Subscription Update",
+      details: "Premium subscription activated",
+      user: "jane.smith@email.com",
+      time: "12:15",
+      severity: "success"
     },
-    { 
-      action: "System Maintenance", 
-      details: "Database optimization completed", 
-      subject: "System", 
-      time: "11:45", 
-      severity: "info" 
+    {
+      action: "System Maintenance",
+      details: "Database optimization completed",
+      subject: "System",
+      time: "11:45",
+      severity: "info"
     }
   ]);
 
   useEffect(() => {
-    const storedAdminName = "Administrator"; // Removed localStorage usage
+    const storedAdminName = "Administrator";
     setAdminName(storedAdminName);
     fetchUsersCount();
     fetchQuestionsCount();
     fetchSubjectsCount();
+    fetchActivities();
     checkSystemStatus();
-    
-    const interval = setInterval(checkSystemStatus, 60000);
+
+    const interval = setInterval(() => {
+      checkSystemStatus();
+      fetchActivities();
+    }, 60000);
     return () => clearInterval(interval);
   }, []);
+
+  const fetchActivities = async () => {
+    try {
+      const { data, error } = await supabase
+        .from("activities")
+        .select(`
+          action,
+          details,
+          subject,
+          severity,
+          created_at,
+          user_id
+        `)
+        .order("created_at", { ascending: false })
+        .limit(5);
+
+      if (error) {
+        console.error("Error fetching activities:", error.message);
+      } else {
+        const formatted = data.map(act => ({
+          ...act,
+          time: new Date(act.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+          user: act.user_id ? act.user_id.substring(0, 8) + '...' : null
+        }));
+        setRecentActivities(formatted);
+      }
+    } catch (err) {
+      console.error("Error in fetchActivities:", err);
+    }
+  };
 
   const fetchUsersCount = async () => {
     try {
@@ -90,8 +138,6 @@ function AdminDashboard() {
         .from("subjects")
         .select("*", { count: "exact", head: true });
 
-      console.log("Subjects count:", count, "Error:", error);
-
       if (error) {
         console.error("Error fetching subjects count:", error.message);
       } else {
@@ -126,557 +172,783 @@ function AdminDashboard() {
 
   const getSeverityColor = (severity) => {
     switch (severity) {
-      case 'success': 
-        return '#48bb78';
-      case 'warning': 
-        return '#ed8936';
-      case 'error': 
-        return '#f56565';
-      default: 
-        return '#4299e1';
-    }
-  };
-
-  const handleNavHover = (e, isEntering) => {
-    if (isEntering) {
-      e.target.style.background = '#f7fafc';
-      e.target.style.borderColor = '#cbd5e0';
-      e.target.style.transform = 'translateY(-1px)';
-      e.target.style.boxShadow = '0 4px 6px rgba(0, 0, 0, 0.1)';
-    } else {
-      e.target.style.background = 'white';
-      e.target.style.borderColor = '#e2e8f0';
-      e.target.style.transform = 'translateY(0)';
-      e.target.style.boxShadow = '0 1px 3px rgba(0, 0, 0, 0.1)';
-    }
-  };
-
-  const handleLogButtonHover = (e, isEntering) => {
-    if (isEntering) {
-      e.target.style.background = 'linear-gradient(135deg, #1a202c 0%, #2d3748 100%)';
-      e.target.style.transform = 'translateY(-1px)';
-      e.target.style.boxShadow = '0 4px 6px rgba(0, 0, 0, 0.15)';
-    } else {
-      e.target.style.background = 'linear-gradient(135deg, #2d3748 0%, #4a5568 100%)';
-      e.target.style.transform = 'translateY(0)';
-      e.target.style.boxShadow = '0 1px 3px rgba(0, 0, 0, 0.1)';
+      case 'success':
+        return '#22c55e';
+      case 'warning':
+        return '#f59e0b';
+      case 'error':
+        return '#ef4444';
+      default:
+        return '#38bdf8';
     }
   };
 
   return (
-    <div style={styles.container}>
-      <div style={styles.dashboardGrid}>
-        {/* Header Card */}
-        <div style={styles.headerCard}>
-          <div>
-            <h1 style={styles.title}>
-              Administrative Control Panel
-            </h1>
-            <p style={styles.subtitle}>
-              MBBS Learning Management System
-            </p>
-          </div>
-          <div style={styles.headerRight}>
-            <div style={styles.adminBadge}>
-              SYSTEM ADMINISTRATOR
+    <div className="admin-dashboard-page">
+      <div className="auth-mesh"></div>
+
+      <main className="admin-main">
+        {/* Hero Section */}
+        <section className="admin-hero">
+          <div className="hero-mesh-overlay"></div>
+          <div className="hero-left">
+            <div className="admin-badge-top">
+              <Shield size={16} />
+              <span>SYSTEM ADMINISTRATOR</span>
             </div>
-            <div style={styles.systemStatus}>
-              <div 
-                style={{
-                  ...styles.statusIndicator,
-                  background: systemStatus === "Operational" ? '#48bb78' : '#f56565'
-                }}
-              ></div>
-              System Status: {systemStatus}
-            </div>
-          </div>
-        </div>
+            <h1>Administrative <span className="text-gradient">Control Panel</span></h1>
+            <p className="hero-p">MBBS Learning Management System</p>
 
-        {/* Statistics Cards */}
-        <div style={styles.statCard}>
-          <div style={styles.statNumber}>
-            {totalUsers.toLocaleString()}
-          </div>
-          <div style={styles.statLabel}>
-            Registered Users
-          </div>
-          <div style={styles.statDetail}>
-            Active student accounts
-          </div>
-        </div>
-
-        <div style={styles.statCard}>
-          <div style={styles.statNumber}>
-            {totalQuestions.toLocaleString()}
-          </div>
-          <div style={styles.statLabel}>
-            Question Database
-          </div>
-          <div style={styles.statDetail}>
-            Total flashcards available
-          </div>
-        </div>
-
-        <div style={styles.statCard}>
-          <div style={styles.statNumber}>
-            {totalSubjects}
-          </div>
-          <div style={styles.statLabel}>
-            Total Subjects
-          </div>
-          <div style={styles.statDetail}>
-            Available study categories
-          </div>
-        </div>
-
-        <div style={styles.statCard}>
-          <div style={styles.statNumber}>
-            {uptime}
-          </div>
-          <div style={styles.statLabel}>
-            System Status
-          </div>
-          <div style={styles.statDetail}>
-            {uptime === "Up" ? "All services running smoothly" : "Service disruption detected"}
-          </div>
-        </div>
-
-        {/* Management Tools */}
-        <div style={styles.managementCard}>
-          <h3 style={styles.sectionTitle}>
-            Content & User Management
-          </h3>
-          <div style={styles.navGrid}>
-            <Link
-              to="/admin/subjects"
-              style={styles.navLink}
-              onMouseEnter={(e) => handleNavHover(e, true)}
-              onMouseLeave={(e) => handleNavHover(e, false)}
-            >
-              <span style={styles.navIcon}>📚</span> 
-              Subject Management
-            </Link>
-            <Link
-              to="/admin/users"
-              style={styles.navLink}
-              onMouseEnter={(e) => handleNavHover(e, true)}
-              onMouseLeave={(e) => handleNavHover(e, false)}
-            >
-              <span style={styles.navIcon}>👥</span> 
-              User Administration
-            </Link>
-          </div>
-        </div>
-
-        {/* Analytics & Reports */}
-        <div style={styles.analyticsCard}>
-          <h3 style={styles.sectionTitle}>
-            Analytics & Reporting
-          </h3>
-          <div style={styles.navGrid}>
-            
-            <Link
-              to="/admin/activeusers"
-              style={styles.navLink}
-              onMouseEnter={(e) => handleNavHover(e, true)}
-              onMouseLeave={(e) => handleNavHover(e, false)}
-            >
-              <span style={styles.navIcon}>📋</span> 
-              Active Users
-            </Link>
-            
-            <Link
-              to="/admin/adminsettings"
-              style={styles.navLink}
-              onMouseEnter={(e) => handleNavHover(e, true)}
-              onMouseLeave={(e) => handleNavHover(e, false)}
-            >
-              <span style={styles.navIcon}>⚙️</span> 
-                Admin Settings
-            </Link>
-          </div>
-        </div>
-
-        {/* System Activity Log */}
-        <div style={styles.activityCard}>
-          <h3 style={styles.sectionTitle}>
-            System Activity Log
-          </h3>
-          {recentActivities.map((activity, index) => (
-            <div key={index} style={styles.activityItem}>
-              <div style={styles.activityContent}>
-                <div style={styles.activityHeader}>
-                  <div 
-                    style={{
-                      ...styles.activityIndicator,
-                      background: getSeverityColor(activity.severity)
-                    }}
-                  ></div>
-                  <span style={styles.activityAction}>
-                    {activity.action}
-                  </span>
+            <div className="hero-stats-row">
+              <div className="mini-stat-glass">
+                <div className="stat-icon-wrap green">
+                  {systemStatus === "Operational" ? <CheckCircle2 size={18} /> : <AlertCircle size={18} />}
                 </div>
-                <div style={styles.activityDetails}>
-                  {activity.details}
-                </div>
-                <div style={styles.activityUser}>
-                  {activity.user || activity.subject}
+                <div className="stat-info">
+                  <span className="stat-value">{systemStatus}</span>
+                  <span className="stat-label">System Status</span>
                 </div>
               </div>
-              <div style={styles.activityTime}>
-                {activity.time}
+              <div className="mini-stat-glass">
+                <div className="stat-icon-wrap blue">
+                  <Activity size={18} />
+                </div>
+                <div className="stat-info">
+                  <span className="stat-value">{uptime}</span>
+                  <span className="stat-label">Uptime</span>
+                </div>
               </div>
             </div>
-          ))}
+          </div>
 
-          <div style={styles.activityFooter}>
-            <Link
-              to="/admin/logs"
-              style={styles.logButton}
-              onMouseEnter={(e) => handleLogButtonHover(e, true)}
-              onMouseLeave={(e) => handleLogButtonHover(e, false)}
-            >
-              View Complete Activity Log
-            </Link>
+          <div className="hero-right">
+            <div className="hologram-visual">
+              <div className="radar-sweep"></div>
+              <div className="hologram-rings">
+                <div className="h-ring r-1"></div>
+                <div className="h-ring r-2"></div>
+                <div className="h-ring r-3"></div>
+              </div>
+              <div className="hologram-core">
+                <Shield size={90} strokeWidth={1} className="shield-pulse-icon" />
+                <div className="core-shine"></div>
+              </div>
+              <div className="data-tag tag-1">USERS // {totalUsers}</div>
+              <div className="data-tag tag-2">DB // ACTIVE</div>
+              <div className="data-tag tag-3">SECURE // ✓</div>
+              <div className="data-tag tag-4">SYS // {systemStatus.toUpperCase()}</div>
+            </div>
+          </div>
+        </section>
+
+        <div className="admin-grid-system">
+          {/* Statistics Cards */}
+          <div className="stat-card-modern">
+            <div className="stat-icon-circle blue">
+              <Users size={24} />
+            </div>
+            <div className="stat-content">
+              <div className="stat-number">{totalUsers.toLocaleString()}</div>
+              <div className="stat-label">Registered Users</div>
+              <div className="stat-detail">Active student accounts</div>
+            </div>
+          </div>
+
+          <div className="stat-card-modern">
+            <div className="stat-icon-circle purple">
+              <BookOpen size={24} />
+            </div>
+            <div className="stat-content">
+              <div className="stat-number">{totalQuestions.toLocaleString()}</div>
+              <div className="stat-label">Question Database</div>
+              <div className="stat-detail">Total flashcards available</div>
+            </div>
+          </div>
+
+          <div className="stat-card-modern">
+            <div className="stat-icon-circle orange">
+              <Database size={24} />
+            </div>
+            <div className="stat-content">
+              <div className="stat-number">{totalSubjects}</div>
+              <div className="stat-label">Total Subjects</div>
+              <div className="stat-detail">Available study categories</div>
+            </div>
+          </div>
+
+          <div className="stat-card-modern">
+            <div className="stat-icon-circle green">
+              <TrendingUp size={24} />
+            </div>
+            <div className="stat-content">
+              <div className="stat-number">{uptime}</div>
+              <div className="stat-label">System Status</div>
+              <div className="stat-detail">{uptime === "Up" ? "All services running" : "Service disruption"}</div>
+            </div>
+          </div>
+
+          {/* Management Panel */}
+          <div className="management-panel">
+            <div className="panel-header">
+              <Activity size={20} className="text-blue" />
+              <h2>Content & User Management</h2>
+            </div>
+            <div className="management-grid">
+              <Link to="/admin/subjects" className="management-card">
+                <div className="card-icon-hex">
+                  <BookOpen size={24} />
+                </div>
+                <div className="card-info">
+                  <h3>Subject Management</h3>
+                  <p>Manage subjects and categories</p>
+                </div>
+                <div className="card-arrow">→</div>
+              </Link>
+
+              <Link to="/admin/users" className="management-card">
+                <div className="card-icon-hex">
+                  <Users size={24} />
+                </div>
+                <div className="card-info">
+                  <h3>User Administration</h3>
+                  <p>View and manage user accounts</p>
+                </div>
+                <div className="card-arrow">→</div>
+              </Link>
+            </div>
+          </div>
+
+          {/* Analytics Panel */}
+          <div className="analytics-panel">
+            <div className="panel-header">
+              <BarChart3 size={20} className="text-blue" />
+              <h2>Analytics & Reporting</h2>
+            </div>
+            <div className="management-grid">
+              <Link to="/admin/activeusers" className="management-card">
+                <div className="card-icon-hex">
+                  <Zap size={24} />
+                </div>
+                <div className="card-info">
+                  <h3>Active Users</h3>
+                  <p>Monitor user activity</p>
+                </div>
+                <div className="card-arrow">→</div>
+              </Link>
+
+
+            </div>
+          </div>
+
+          {/* Activity Log */}
+          <div className="activity-log-panel">
+            <div className="panel-header">
+              <Clock size={20} className="text-blue" />
+              <h2>System Activity Log</h2>
+            </div>
+            <div className="activity-list">
+              {recentActivities.map((activity, index) => (
+                <div key={index} className="activity-item-modern">
+                  <div className="activity-indicator" style={{ background: getSeverityColor(activity.severity) }}></div>
+                  <div className="activity-content">
+                    <div className="activity-header">
+                      <span className="activity-action">{activity.action}</span>
+                      <span className="activity-time">{activity.time}</span>
+                    </div>
+                    <div className="activity-details">{activity.details}</div>
+                    {(activity.user || activity.subject) && (
+                      <div className="activity-meta">{activity.user || activity.subject}</div>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+            <div className="activity-footer">
+              <Link to="/admin/logs" className="view-all-btn">
+                View Complete Activity Log
+              </Link>
+            </div>
           </div>
         </div>
-      </div>
+      </main>
+
+      <style>{`
+        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
+
+        .admin-dashboard-page {
+          min-height: 100vh;
+          background: #060912;
+          color: white;
+          font-family: 'Plus Jakarta Sans', sans-serif;
+          position: relative;
+          overflow-x: hidden;
+        }
+
+        .auth-mesh {
+          position: absolute;
+          top: 0; left: 0; right: 0; bottom: 0;
+          background: 
+            radial-gradient(circle at 10% 10%, rgba(37, 99, 235, 0.1) 0%, transparent 40%),
+            radial-gradient(circle at 90% 90%, rgba(56, 189, 248, 0.08) 0%, transparent 40%),
+            radial-gradient(circle at 50% 50%, rgba(99, 102, 241, 0.02) 0%, transparent 60%);
+          z-index: 0;
+          pointer-events: none;
+        }
+
+        .admin-main {
+          max-width: 1400px;
+          margin: 0 auto;
+          padding: 2rem 2.5rem 6rem;
+          position: relative;
+          z-index: 1;
+        }
+
+        /* Hero Section */
+        .admin-hero {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          padding: 3.5rem 4.5rem;
+          margin-bottom: 3.5rem;
+          color: white;
+          position: relative;
+          background: linear-gradient(135deg, rgba(15, 23, 42, 0.9) 0%, rgba(255, 255, 255, 0.25) 45%, rgba(56, 189, 248, 0.15) 100%);
+          border-radius: 56px;
+          border: 1px solid rgba(255, 255, 255, 0.2);
+          backdrop-filter: blur(32px);
+          box-shadow: 
+            0 50px 140px -30px rgba(0, 0, 0, 0.6),
+            inset 0 1px 4px rgba(255, 255, 255, 0.2);
+          overflow: hidden;
+        }
+
+        .hero-mesh-overlay {
+          position: absolute;
+          inset: 0;
+          background-image: radial-gradient(rgba(56, 189, 248, 0.1) 1px, transparent 1px);
+          background-size: 24px 24px;
+          opacity: 0.3;
+          z-index: 0;
+        }
+
+        .hero-left { 
+          position: relative; 
+          z-index: 2; 
+          flex: 1; 
+        }
+
+        .admin-badge-top {
+          display: inline-flex;
+          align-items: center;
+          gap: 0.5rem;
+          background: rgba(37, 99, 235, 0.2);
+          border: 1px solid rgba(37, 99, 235, 0.3);
+          padding: 0.5rem 1rem;
+          border-radius: 99px;
+          color: #60a5fa;
+          font-size: 0.75rem;
+          font-weight: 800;
+          letter-spacing: 1px;
+          margin-bottom: 1.5rem;
+        }
+
+        .admin-hero h1 {
+          font-size: 3.5rem;
+          font-weight: 800;
+          letter-spacing: -3px;
+          margin-bottom: 0.5rem;
+          line-height: 1;
+          color: white;
+          text-shadow: 0 20px 50px rgba(0,0,0,0.5);
+        }
+
+        .hero-p {
+          color: #94a3b8;
+          font-size: 1.1rem;
+          max-width: 500px;
+          margin-bottom: 1.5rem;
+          line-height: 1.5;
+          font-weight: 500;
+        }
+
+        .hero-stats-row {
+          display: flex;
+          gap: 1.5rem;
+        }
+
+        .mini-stat-glass {
+          display: flex;
+          align-items: center;
+          gap: 1rem;
+          background: rgba(10, 15, 28, 0.4);
+          padding: 0.75rem 1.5rem;
+          border-radius: 20px;
+          border: 1px solid rgba(255, 255, 255, 0.05);
+          backdrop-filter: blur(12px);
+          transition: 0.3s;
+        }
+
+        .mini-stat-glass:hover {
+          background: rgba(10, 15, 28, 0.6);
+          transform: translateY(-4px);
+          border-color: rgba(255, 255, 255, 0.15);
+        }
+
+        .stat-icon-wrap {
+          width: 40px; 
+          height: 40px;
+          border-radius: 12px;
+          display: flex; 
+          align-items: center; 
+          justify-content: center;
+        }
+        .stat-icon-wrap.green { background: rgba(34, 197, 94, 0.1); color: #22c55e; }
+        .stat-icon-wrap.blue { background: rgba(56, 189, 248, 0.1); color: #38bdf8; }
+
+        .stat-info { 
+          display: flex; 
+          flex-direction: column; 
+        }
+        .stat-value { 
+          font-size: 1.1rem; 
+          font-weight: 800; 
+          color: white; 
+          line-height: 1; 
+        }
+        .stat-label { 
+          font-size: 0.7rem; 
+          color: #64748b; 
+          font-weight: 700; 
+          text-transform: uppercase; 
+          margin-top: 2px; 
+        }
+
+        /* Hero Right Visual */
+        .hero-right {
+          flex: 1;
+          display: flex;
+          justify-content: flex-end;
+          align-items: center;
+          perspective: 1000px;
+        }
+
+        .hologram-visual {
+          position: relative;
+          width: 260px;
+          height: 260px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          transform: rotateX(10deg) rotateY(-10deg);
+        }
+
+        .radar-sweep {
+          position: absolute;
+          inset: 0;
+          background: conic-gradient(from 0deg, rgba(56, 189, 248, 0.2) 0deg, transparent 90deg);
+          border-radius: 50%;
+          border: 1px solid rgba(56, 189, 248, 0.05);
+          animation: sweep 4s linear infinite;
+        }
+
+        @keyframes sweep {
+          from { transform: rotate(0deg); }
+          to { transform: rotate(360deg); }
+        }
+
+        .h-ring {
+          position: absolute;
+          border: 1px solid rgba(56, 189, 248, 0.15);
+          border-radius: 50%;
+        }
+        .r-1 { width: 120px; height: 120px; border-style: dashed; }
+        .r-2 { width: 180px; height: 180px; border-width: 2px; opacity: 0.4; }
+        .r-3 { width: 240px; height: 240px; border-style: dotted; opacity: 0.2; }
+
+        .hologram-core {
+          position: relative;
+          z-index: 10;
+          color: #38bdf8;
+          filter: drop-shadow(0 0 15px rgba(56, 189, 248, 0.4));
+        }
+
+        .shield-pulse-icon {
+          animation: shield-pulse 2s ease-in-out infinite;
+        }
+
+        @keyframes shield-pulse {
+          0%, 100% { transform: scale(1); opacity: 0.8; }
+          50% { transform: scale(1.1); opacity: 1; filter: drop-shadow(0 0 25px rgba(56, 189, 248, 0.6)); }
+        }
+
+        .core-shine {
+          position: absolute;
+          top: 50%; left: 50%;
+          transform: translate(-50%, -50%);
+          width: 160px; height: 160px;
+          background: radial-gradient(circle, rgba(255, 255, 255, 0.5) 0%, rgba(56, 189, 248, 0.3) 50%, transparent 80%);
+          filter: blur(35px);
+          z-index: -1;
+        }
+
+        .data-tag {
+          position: absolute;
+          padding: 0.4rem 0.8rem;
+          background: rgba(15, 23, 42, 0.8);
+          border: 1px solid rgba(56, 189, 248, 0.3);
+          border-radius: 8px;
+          font-family: monospace;
+          font-size: 0.7rem;
+          color: #38bdf8;
+          backdrop-filter: blur(5px);
+          white-space: nowrap;
+          animation: float-tag 4s infinite ease-in-out;
+        }
+
+        .tag-1 { top: 10%; right: 10%; animation-delay: 0s; }
+        .tag-2 { bottom: 20%; left: 0%; animation-delay: 1s; }
+        .tag-3 { top: 30%; left: -10%; animation-delay: 2s; }
+        .tag-4 { bottom: 5%; right: -5%; animation-delay: 3s; color: #22c55e; border-color: rgba(34, 197, 94, 0.3); }
+
+        @keyframes float-tag {
+          0%, 100% { transform: translateY(0) translateX(0); }
+          50% { transform: translateY(-10px) translateX(5px); }
+        }
+
+        .text-gradient {
+          background: linear-gradient(90deg, #38bdf8, #818cf8);
+          -webkit-background-clip: text;
+          -webkit-text-fill-color: transparent;
+        }
+
+        .text-blue { color: #38bdf8; }
+
+        /* Grid System */
+        .admin-grid-system {
+          display: grid;
+          grid-template-columns: repeat(4, 1fr);
+          gap: 2.5rem;
+        }
+
+        /* Stat Cards */
+        .stat-card-modern {
+          background: rgba(255, 255, 255, 0.03);
+          border: 1px solid rgba(255, 255, 255, 0.1);
+          border-radius: 24px;
+          padding: 2rem;
+          display: flex;
+          flex-direction: column;
+          gap: 1rem;
+          transition: all 0.3s;
+          position: relative;
+          overflow: hidden;
+        }
+
+        .stat-card-modern:hover {
+          background: rgba(255, 255, 255, 0.05);
+          transform: translateY(-5px);
+          border-color: rgba(255, 255, 255, 0.2);
+          box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+        }
+
+        .stat-icon-circle {
+          width: 56px;
+          height: 56px;
+          border-radius: 16px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+        }
+
+        .stat-icon-circle.blue { background: rgba(56, 189, 248, 0.1); color: #38bdf8; }
+        .stat-icon-circle.purple { background: rgba(129, 140, 248, 0.1); color: #818cf8; }
+        .stat-icon-circle.orange { background: rgba(251, 146, 60, 0.1); color: #fb923c; }
+        .stat-icon-circle.green { background: rgba(34, 197, 94, 0.1); color: #22c55e; }
+
+        .stat-content {
+          flex: 1;
+        }
+
+        .stat-number {
+          font-size: 2.5rem;
+          font-weight: 800;
+          color: white;
+          line-height: 1;
+          margin-bottom: 0.5rem;
+        }
+
+        .stat-label {
+          font-size: 0.9rem;
+          color: #94a3b8;
+          font-weight: 600;
+          text-transform: uppercase;
+          letter-spacing: 0.05em;
+          margin-bottom: 0.25rem;
+        }
+
+        .stat-detail {
+          font-size: 0.8rem;
+          color: #64748b;
+          font-weight: 400;
+        }
+
+        /* Management & Analytics Panels */
+        .management-panel,
+        .analytics-panel {
+          grid-column: span 2;
+          background: rgba(255, 255, 255, 0.03);
+          border: 1px solid rgba(255, 255, 255, 0.1);
+          border-radius: 24px;
+          padding: 2.5rem;
+        }
+
+        .panel-header {
+          display: flex;
+          align-items: center;
+          gap: 0.75rem;
+          margin-bottom: 2rem;
+        }
+
+        .panel-header h2 {
+          font-size: 1.5rem;
+          font-weight: 800;
+          letter-spacing: -0.5px;
+          margin: 0;
+        }
+
+        .management-grid {
+          display: grid;
+          gap: 1.5rem;
+        }
+
+        .management-card {
+          display: flex;
+          align-items: center;
+          gap: 1.5rem;
+          background: rgba(255, 255, 255, 0.05);
+          border: 1px solid rgba(255, 255, 255, 0.1);
+          border-radius: 16px;
+          padding: 1.5rem;
+          text-decoration: none;
+          color: white;
+          transition: all 0.3s;
+          position: relative;
+          overflow: hidden;
+        }
+
+        .management-card:hover {
+          background: rgba(255, 255, 255, 0.08);
+          transform: translateX(8px);
+          border-color: rgba(56, 189, 248, 0.3);
+        }
+
+        .card-icon-hex {
+          width: 48px;
+          height: 48px;
+          background: rgba(56, 189, 248, 0.1);
+          border-radius: 12px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          color: #38bdf8;
+          flex-shrink: 0;
+        }
+
+        .card-info {
+          flex: 1;
+        }
+
+        .card-info h3 {
+          font-size: 1.1rem;
+          font-weight: 700;
+          margin: 0 0 0.25rem 0;
+          color: white;
+        }
+
+        .card-info p {
+          font-size: 0.85rem;
+          color: #94a3b8;
+          margin: 0;
+        }
+
+        .card-arrow {
+          font-size: 1.5rem;
+          color: #38bdf8;
+          opacity: 0.5;
+          transition: all 0.3s;
+        }
+
+        .management-card:hover .card-arrow {
+          opacity: 1;
+          transform: translateX(4px);
+        }
+
+        /* Activity Log */
+        .activity-log-panel {
+          grid-column: 1 / -1;
+          background: rgba(255, 255, 255, 0.03);
+          border: 1px solid rgba(255, 255, 255, 0.1);
+          border-radius: 24px;
+          padding: 2.5rem;
+        }
+
+        .activity-list {
+          display: flex;
+          flex-direction: column;
+          gap: 1rem;
+          margin-bottom: 2rem;
+        }
+
+        .activity-item-modern {
+          display: flex;
+          gap: 1rem;
+          background: rgba(255, 255, 255, 0.03);
+          border: 1px solid rgba(255, 255, 255, 0.05);
+          border-radius: 12px;
+          padding: 1.25rem;
+          transition: all 0.3s;
+        }
+
+        .activity-item-modern:hover {
+          background: rgba(255, 255, 255, 0.05);
+          transform: translateX(4px);
+        }
+
+        .activity-indicator {
+          width: 8px;
+          height: 8px;
+          border-radius: 50%;
+          margin-top: 6px;
+          flex-shrink: 0;
+        }
+
+        .activity-content {
+          flex: 1;
+        }
+
+        .activity-header {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          margin-bottom: 0.5rem;
+        }
+
+        .activity-action {
+          font-weight: 700;
+          color: white;
+          font-size: 0.95rem;
+        }
+
+        .activity-time {
+          font-size: 0.8rem;
+          color: #64748b;
+          font-family: monospace;
+          font-weight: 600;
+        }
+
+        .activity-details {
+          font-size: 0.85rem;
+          color: #94a3b8;
+          margin-bottom: 0.5rem;
+        }
+
+        .activity-meta {
+          font-size: 0.75rem;
+          color: #64748b;
+          font-family: monospace;
+        }
+
+        .activity-footer {
+          display: flex;
+          justify-content: center;
+          padding-top: 1.5rem;
+          border-top: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        .view-all-btn {
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
+          padding: 1rem 2rem;
+          background: rgba(56, 189, 248, 0.1);
+          border: 1px solid rgba(56, 189, 248, 0.3);
+          color: #38bdf8;
+          text-decoration: none;
+          border-radius: 12px;
+          font-size: 0.95rem;
+          font-weight: 600;
+          transition: all 0.3s;
+        }
+
+        .view-all-btn:hover {
+          background: rgba(56, 189, 248, 0.2);
+          transform: translateY(-2px);
+          box-shadow: 0 10px 20px rgba(56, 189, 248, 0.2);
+        }
+
+        /* Responsive */
+        @media (max-width: 1024px) {
+          .admin-hero {
+            flex-direction: column;
+            text-align: center;
+            padding: 2.5rem;
+          }
+          
+          .hero-left {
+            align-items: center;
+            display: flex;
+            flex-direction: column;
+          }
+
+          .admin-grid-system {
+            grid-template-columns: repeat(2, 1fr);
+          }
+
+          .management-panel,
+          .analytics-panel,
+          .activity-log-panel {
+            grid-column: span 2;
+          }
+        }
+
+        @media (max-width: 640px) {
+          .admin-main {
+            padding: 1.5rem;
+          }
+
+          .admin-hero {
+            padding: 2rem 1.5rem;
+            border-radius: 32px;
+          }
+
+          .admin-hero h1 {
+            font-size: 2.5rem;
+          }
+
+          .hero-stats-row {
+            flex-direction: column;
+            width: 100%;
+          }
+
+          .admin-grid-system {
+            grid-template-columns: 1fr;
+            gap: 1.5rem;
+          }
+
+          .stat-card-modern,
+          .management-panel,
+          .analytics-panel,
+          .activity-log-panel {
+            grid-column: span 1;
+          }
+
+          .hologram-visual {
+            transform: scale(0.8);
+          }
+        }
+      `}</style>
     </div>
   );
 }
-// Consolidated CSS Styles - No Corner Padding, Fully Responsive
-const styles = {
-  container: {
-    minHeight: '100vh',
-    minWidth: '100vw',
-    width: '100%',
-    height: '100%',
-    background: 'linear-gradient(135deg, #1a202c 0%, #2d3748 40%, #4a5568 70%, #718096 100%)',
-    padding: '0',
-    margin: '0',
-    fontFamily: "'Inter', 'Segoe UI', system-ui, sans-serif",
-    boxSizing: 'border-box',
-    position: 'fixed',
-    top: '0',
-    left: '0',
-    right: '0',
-    bottom: '0',
-    overflowY: 'auto',
-    overflowX: 'hidden'
-  },
-
-  dashboardGrid: {
-    display: 'grid',
-    gridTemplateColumns: 'repeat(12, 1fr)',
-    gap: window.innerWidth <= 480 ? '1rem' : window.innerWidth <= 768 ? '1.5rem' : '2rem',
-    maxWidth: '1600px',
-    margin: '0 auto',
-    padding: window.innerWidth <= 480 ? '1rem' : window.innerWidth <= 768 ? '1.5rem' : '2rem',
-    minHeight: '100vh',
-    boxSizing: 'border-box'
-  },
-
-  headerCard: {
-    background: 'linear-gradient(135deg, rgba(26, 32, 44, 0.97) 0%, rgba(45, 55, 72, 0.97) 100%)',
-    backdropFilter: 'blur(20px)',
-    borderRadius: window.innerWidth <= 480 ? '8px' : '12px',
-    padding: window.innerWidth <= 480 ? '1.5rem' : window.innerWidth <= 768 ? '1.8rem' : '2rem',
-    boxShadow: '0 8px 32px rgba(0, 0, 0, 0.12)',
-    border: '1px solid rgba(255, 255, 255, 0.1)',
-    color: 'white',
-    gridColumn: '1 / -1',
-    minHeight: window.innerWidth <= 480 ? '120px' : '140px',
-    display: 'flex',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    flexDirection: window.innerWidth <= 768 ? 'column' : 'row',
-    gap: window.innerWidth <= 768 ? '1rem' : '0',
-    textAlign: window.innerWidth <= 768 ? 'center' : 'left'
-  },
-
-  title: {
-    fontSize: window.innerWidth <= 480 ? '1.8rem' : window.innerWidth <= 768 ? '2rem' : '2.5rem',
-    fontWeight: '700',
-    color: 'white',
-    lineHeight: '1.1',
-    letterSpacing: '-0.025em',
-    marginBottom: '0.5rem'
-  },
-
-  subtitle: {
-    fontSize: window.innerWidth <= 480 ? '0.9rem' : window.innerWidth <= 768 ? '1rem' : '1.1rem',
-    fontWeight: '400',
-    opacity: 0.85,
-    lineHeight: '1.4'
-  },
-
-  headerRight: {
-    display: 'flex',
-    flexDirection: 'column',
-    alignItems: window.innerWidth <= 768 ? 'center' : 'flex-end',
-    gap: '0.75rem'
-  },
-
-  adminBadge: {
-    background: 'linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%)',
-    color: 'white',
-    padding: window.innerWidth <= 480 ? '0.5rem 1rem' : '0.6rem 1.2rem',
-    borderRadius: '8px',
-    fontSize: window.innerWidth <= 480 ? '0.7rem' : '0.75rem',
-    fontWeight: '700',
-    textTransform: 'uppercase',
-    letterSpacing: '0.1em',
-    boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)',
-    whiteSpace: 'nowrap'
-  },
-
-  systemStatus: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: '0.6rem',
-    fontSize: window.innerWidth <= 480 ? '0.8rem' : '0.9rem',
-    color: 'white',
-    opacity: 0.9,
-    fontWeight: '500'
-  },
-
-  statusIndicator: {
-    width: window.innerWidth <= 480 ? '8px' : '10px',
-    height: window.innerWidth <= 480 ? '8px' : '10px',
-    borderRadius: '50%',
-    backgroundColor: '#48bb78',
-    boxShadow: '0 0 8px rgba(72, 187, 120, 0.6)'
-  },
-
-  statCard: {
-    background: 'rgba(255, 255, 255, 0.98)',
-    backdropFilter: 'blur(20px)',
-    borderRadius: window.innerWidth <= 480 ? '8px' : '12px',
-    padding: window.innerWidth <= 480 ? '1.5rem' : window.innerWidth <= 768 ? '1.8rem' : '2rem',
-    boxShadow: '0 4px 20px rgba(0, 0, 0, 0.08)',
-    border: '1px solid rgba(203, 213, 224, 0.3)',
-    textAlign: 'center',
-    gridColumn: window.innerWidth <= 768 ? '1' : 'span 3',
-    transition: 'transform 0.2s ease, box-shadow 0.2s ease',
-    position: 'relative',
-    overflow: 'hidden',
-    cursor: 'pointer'
-  },
-
-  statNumber: {
-    fontSize: window.innerWidth <= 480 ? '2rem' : window.innerWidth <= 768 ? '2.5rem' : '3rem',
-    fontWeight: '800',
-    color: '#1a202c',
-    marginBottom: '0.5rem',
-    lineHeight: '1',
-    background: 'linear-gradient(135deg, #1a202c 0%, #2d3748 100%)',
-    WebkitBackgroundClip: 'text',
-    WebkitTextFillColor: 'transparent'
-  },
-
-  statLabel: {
-    fontSize: window.innerWidth <= 480 ? '0.8rem' : '0.9rem',
-    color: '#4a5568',
-    fontWeight: '600',
-    textTransform: 'uppercase',
-    letterSpacing: '0.05em',
-    marginBottom: '0.5rem'
-  },
-
-  statDetail: {
-    fontSize: window.innerWidth <= 480 ? '0.7rem' : '0.8rem',
-    color: '#718096',
-    fontWeight: '400',
-    fontStyle: 'italic'
-  },
-
-  managementCard: {
-    background: 'rgba(255, 255, 255, 0.98)',
-    backdropFilter: 'blur(20px)',
-    borderRadius: window.innerWidth <= 480 ? '8px' : '12px',
-    padding: window.innerWidth <= 480 ? '1.5rem' : window.innerWidth <= 768 ? '1.8rem' : '2rem',
-    boxShadow: '0 4px 20px rgba(0, 0, 0, 0.08)',
-    border: '1px solid rgba(203, 213, 224, 0.3)',
-    gridColumn: window.innerWidth <= 768 ? '1' : 'span 6'
-  },
-
-  analyticsCard: {
-    background: 'rgba(255, 255, 255, 0.98)',
-    backdropFilter: 'blur(20px)',
-    borderRadius: window.innerWidth <= 480 ? '8px' : '12px',
-    padding: window.innerWidth <= 480 ? '1.5rem' : window.innerWidth <= 768 ? '1.8rem' : '2rem',
-    boxShadow: '0 4px 20px rgba(0, 0, 0, 0.08)',
-    border: '1px solid rgba(203, 213, 224, 0.3)',
-    gridColumn: window.innerWidth <= 768 ? '1' : 'span 6'
-  },
-
-  activityCard: {
-    background: 'rgba(255, 255, 255, 0.98)',
-    backdropFilter: 'blur(20px)',
-    borderRadius: window.innerWidth <= 480 ? '8px' : '12px',
-    padding: window.innerWidth <= 480 ? '1.5rem' : window.innerWidth <= 768 ? '1.8rem' : '2rem',
-    boxShadow: '0 4px 20px rgba(0, 0, 0, 0.08)',
-    border: '1px solid rgba(203, 213, 224, 0.3)',
-    gridColumn: '1 / -1'
-  },
-
-  sectionTitle: {
-    fontSize: window.innerWidth <= 480 ? '1.1rem' : window.innerWidth <= 768 ? '1.2rem' : '1.4rem',
-    fontWeight: '700',
-    color: '#1a202c',
-    marginBottom: window.innerWidth <= 480 ? '1rem' : '1.5rem',
-    letterSpacing: '-0.025em',
-    borderBottom: '3px solid #e2e8f0',
-    paddingBottom: '0.75rem',
-    position: 'relative'
-  },
-
-  navGrid: {
-    display: 'grid',
-    gridTemplateColumns: window.innerWidth <= 480 ? '1fr' : 
-                        window.innerWidth <= 768 ? 'repeat(2, 1fr)' : 
-                        'repeat(auto-fit, minmax(250px, 1fr))',
-    gap: window.innerWidth <= 480 ? '0.8rem' : '1rem'
-  },
-
-  navLink: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: '0.875rem',
-    padding: window.innerWidth <= 480 ? '1rem 1.2rem' : '1.25rem 1.5rem',
-    background: 'white',
-    color: '#2d3748',
-    textDecoration: 'none',
-    borderRadius: '8px',
-    fontSize: window.innerWidth <= 480 ? '0.85rem' : '0.95rem',
-    fontWeight: '600',
-    transition: 'all 0.2s ease',
-    boxShadow: '0 2px 4px rgba(0, 0, 0, 0.08)',
-    border: '1px solid #e2e8f0',
-    position: 'relative',
-    overflow: 'hidden',
-    cursor: 'pointer'
-  },
-
-  navIcon: {
-    fontSize: window.innerWidth <= 480 ? '1rem' : '1.1rem',
-    minWidth: '20px'
-  },
-
-  activityItem: {
-    display: 'flex',
-    justifyContent: 'space-between',
-    alignItems: 'flex-start',
-    padding: window.innerWidth <= 480 ? '1rem' : '1.25rem',
-    background: '#f8fafc',
-    borderRadius: '8px',
-    marginBottom: window.innerWidth <= 480 ? '0.8rem' : '1rem',
-    border: '1px solid #e2e8f0',
-    transition: 'all 0.2s ease',
-    flexDirection: window.innerWidth <= 480 ? 'column' : 'row',
-    gap: window.innerWidth <= 480 ? '0.8rem' : '0'
-  },
-
-  activityContent: {
-    flex: 1,
-    minWidth: 0
-  },
-
-  activityHeader: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: '0.75rem',
-    marginBottom: '0.5rem',
-    flexWrap: 'wrap'
-  },
-
-  activityIndicator: {
-    width: '8px',
-    height: '8px',
-    borderRadius: '50%',
-    flexShrink: 0,
-    backgroundColor: '#48bb78'
-  },
-
-  activityAction: {
-    fontWeight: '700',
-    color: '#1a202c',
-    fontSize: window.innerWidth <= 480 ? '0.85rem' : '0.95rem'
-  },
-
-  activityDetails: {
-    fontSize: window.innerWidth <= 480 ? '0.8rem' : '0.85rem',
-    color: '#4a5568',
-    marginBottom: '0.5rem',
-    lineHeight: '1.4'
-  },
-
-  activityUser: {
-    fontSize: window.innerWidth <= 480 ? '0.75rem' : '0.8rem',
-    color: '#718096',
-    fontFamily: 'monospace',
-    fontWeight: '500'
-  },
-
-  activityTime: {
-    fontSize: window.innerWidth <= 480 ? '0.75rem' : '0.8rem',
-    color: '#718096',
-    fontWeight: '600',
-    fontFamily: 'monospace',
-    whiteSpace: 'nowrap',
-    marginLeft: window.innerWidth <= 480 ? '0' : '1rem',
-    alignSelf: window.innerWidth <= 480 ? 'flex-start' : 'auto'
-  },
-
-  activityFooter: {
-    display: 'flex',
-    justifyContent: 'center',
-    marginTop: window.innerWidth <= 480 ? '1.5rem' : '2rem',
-    paddingTop: '1.5rem',
-    borderTop: '2px solid #e2e8f0'
-  },
-
-  logButton: {
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: '0.75rem',
-    padding: window.innerWidth <= 480 ? '0.9rem 1.5rem' : '1rem 2rem',
-    background: 'linear-gradient(135deg, #2d3748 0%, #4a5568 100%)',
-    color: 'white',
-    textDecoration: 'none',
-    borderRadius: '8px',
-    fontSize: window.innerWidth <= 480 ? '0.85rem' : '0.95rem',
-    fontWeight: '600',
-    transition: 'all 0.2s ease',
-    boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)',
-    border: 'none',
-    minWidth: window.innerWidth <= 480 ? '200px' : '250px',
-    cursor: 'pointer'
-  },
-
-  // Hover effects for interactive elements
-  statCardHover: {
-    transform: 'translateY(-2px)',
-    boxShadow: '0 8px 25px rgba(0, 0, 0, 0.12)'
-  },
-
-  navLinkHover: {
-    background: '#f7fafc',
-    transform: 'translateY(-1px)',
-    boxShadow: '0 4px 8px rgba(0, 0, 0, 0.12)'
-  },
-
-  activityItemHover: {
-    background: '#f1f5f9',
-    transform: window.innerWidth > 480 ? 'translateX(4px)' : 'none'
-  },
-
-  logButtonHover: {
-    background: 'linear-gradient(135deg, #1a202c 0%, #2d3748 100%)',
-    transform: 'translateY(-1px)',
-    boxShadow: '0 6px 12px rgba(0, 0, 0, 0.15)'
-  }
-};
 
 export default AdminDashboard;

@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import Navbar from "../Reuseable/Navbar";
 import Footer from "../Reuseable/Footer";
@@ -6,131 +6,179 @@ import Footer from "../Reuseable/Footer";
 export default function Thanks() {
   const navigate = useNavigate();
 
-  const handleGoToDashboard = () => {
-    navigate("/dashboard"); // or "/" for home
-  };
-
-  const [hoveredButton, setHoveredButton] = React.useState(false);
-
-  const containerStyle = {
-    minHeight: '100vh',
-    width: '100%',
-    background: 'linear-gradient(135deg, #e8f0f5 0%, #f5f8fa 100%)',
-    padding: '2rem',
-    display: 'flex',
-    flexDirection: 'column',
-    alignItems: 'center',
-    justifyContent: 'center',
-    fontFamily: "'Inter', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif",
-    boxSizing: 'border-box'
-  };
-
-  const thanksCardStyle = {
-    background: 'rgba(255, 255, 255, 0.85)',
-    backdropFilter: 'blur(25px)',
-    borderRadius: '24px',
-    padding: '4rem 3rem',
-    boxShadow: '0 20px 40px rgba(0, 0, 0, 0.25), 0 8px 20px rgba(0, 0, 0, 0.15), inset 0 1px 0 rgba(255, 255, 255, 0.2)',
-    border: '1px solid rgba(255, 255, 255, 0.2)',
-    textAlign: 'center',
-    position: 'relative',
-    zIndex: 2,
-    overflow: 'hidden',
-    maxWidth: '600px',
-    width: '100%',
-    transform: 'translateY(-5px)',
-    transition: 'all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275)'
-  };
-
-  const titleStyle = {
-    color: '#2c3e50',
-    fontSize: '3.5rem',
-    marginBottom: '2rem',
-    fontWeight: '700',
-    textShadow: '0 4px 8px rgba(0, 0, 0, 0.3)',
-    letterSpacing: '-0.02em',
-    background: 'linear-gradient(135deg, #2c3e50 0%, #34495e 100%)',
-    WebkitBackgroundClip: 'text',
-    WebkitTextFillColor: 'transparent',
-    backgroundClip: 'text'
-  };
-
-  const messageStyle = {
-    color: '#34495e',
-    fontSize: '1.3rem',
-    marginBottom: '3rem',
-    fontWeight: '400',
-    lineHeight: '1.6',
-    textShadow: '0 1px 2px rgba(0, 0, 0, 0.1)',
-    maxWidth: '450px',
-    margin: '0 auto 3rem auto'
-  };
-
-  const buttonStyle = {
-    background: 'linear-gradient(135deg, #6b8caa 0%, #3d4d5d 100%)',
-    color: 'white',
-    border: 'none',
-    padding: '1.5rem 3rem',
-    borderRadius: '16px',
-    fontSize: '1.2rem',
-    fontWeight: '600',
-    cursor: 'pointer',
-    transition: 'all 0.3s ease',
-    boxShadow: '0 10px 30px rgba(107, 140, 170, 0.35)',
-    textTransform: 'uppercase',
-    letterSpacing: '0.5px',
-    position: 'relative',
-    overflow: 'hidden',
-    minWidth: '200px',
-    ...(hoveredButton ? {
-      transform: 'translateY(-3px) scale(1.05)',
-      boxShadow: '0 15px 35px rgba(107, 140, 170, 0.45)',
-      background: 'linear-gradient(135deg, #5a7b98 0%, #2a3a4a 100%)',
-    } : {})
-  };
-
-  const checkmarkStyle = {
-    width: '80px',
-    height: '80px',
-    borderRadius: '50%',
-    background: 'linear-gradient(135deg, #27ae60 0%, #2ecc71 100%)',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    margin: '0 auto 2rem auto',
-    boxShadow: '0 10px 25px rgba(39, 174, 96, 0.3)',
-    position: 'relative'
-  };
-
-  const checkmarkIconStyle = {
-    color: 'white',
-    fontSize: '2.5rem',
-    fontWeight: 'bold'
-  };
-
   return (
-    <>
+    <div className="thanks-page">
       <Navbar />
-      <div style={containerStyle}>
-        <div style={thanksCardStyle}>
-          <div style={checkmarkStyle}>
-            <span style={checkmarkIconStyle}>✓</span>
+
+      <main className="thanks-container">
+        <div className="mesh-bg"></div>
+
+        <div className="thanks-card">
+          <div className="success-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
+              <path d="M20 6L9 17L4 12" strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
           </div>
-          <h1 style={titleStyle}>Thank You!</h1>
-          <p style={messageStyle}>
-            Your payment was successful. Your subscription is now active and you can start enjoying all the premium features.
-          </p>
-          <button
-            style={buttonStyle}
-            onClick={handleGoToDashboard}
-            onMouseEnter={() => setHoveredButton(true)}
-            onMouseLeave={() => setHoveredButton(false)}
-          >
-            Go to Dashboard
-          </button>
+
+          <div className="thanks-content">
+            <h1>Payment Successful!</h1>
+            <p>Welcome to the premium medical community. Your Pro account is now active and ready for your next study session.</p>
+
+            <div className="next-steps">
+              <div className="step">
+                <span className="step-num">1</span>
+                <span>Pro subjects unlocked</span>
+              </div>
+              <div className="step">
+                <span className="step-num">2</span>
+                <span>Unlimited cards enabled</span>
+              </div>
+              <div className="step">
+                <span className="step-num">3</span>
+                <span>Analytics tracking active</span>
+              </div>
+            </div>
+
+            <button className="btn-dashboard" onClick={() => navigate("/dashboard")}>
+              Go to My Dashboard
+            </button>
+          </div>
         </div>
-      </div>
+      </main>
+
       <Footer />
-    </>
+
+      <style>{`
+        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
+
+        .thanks-page {
+          min-height: 100vh;
+          background: #0f172a;
+          font-family: 'Plus Jakarta Sans', sans-serif;
+          color: white;
+        }
+
+        .thanks-container {
+          position: relative;
+          padding: 8rem 2rem 4rem;
+          min-height: calc(100vh - 80px);
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          overflow: hidden;
+        }
+
+        .mesh-bg {
+          position: absolute;
+          top: 0; left: 0; right: 0; bottom: 0;
+          background: 
+            radial-gradient(circle at 50% 50%, rgba(34, 197, 94, 0.1) 0%, transparent 50%),
+            radial-gradient(circle at 0% 0%, rgba(37, 99, 235, 0.05) 0%, transparent 50%);
+          z-index: 1;
+        }
+
+        .thanks-card {
+          position: relative;
+          z-index: 2;
+          background: rgba(30, 41, 59, 0.5);
+          backdrop-filter: blur(20px);
+          border: 1px solid rgba(255, 255, 255, 0.05);
+          border-radius: 40px;
+          padding: 4rem;
+          max-width: 550px;
+          width: 100%;
+          text-align: center;
+          box-shadow: 0 40px 100px -20px rgba(0, 0, 0, 0.5);
+        }
+
+        .success-icon {
+          width: 80px;
+          height: 80px;
+          background: #22c55e;
+          border-radius: 24px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          margin: 0 auto 2.5rem;
+          color: white;
+          box-shadow: 0 20px 40px -10px rgba(34, 197, 94, 0.4);
+        }
+
+        .success-icon svg {
+          width: 40px;
+          height: 40px;
+        }
+
+        .thanks-content h1 {
+          font-size: 2.5rem;
+          font-weight: 800;
+          margin-bottom: 1rem;
+          letter-spacing: -1px;
+        }
+
+        .thanks-content p {
+          color: #94a3b8;
+          font-size: 1.125rem;
+          line-height: 1.6;
+          margin-bottom: 3rem;
+        }
+
+        .next-steps {
+          display: flex;
+          flex-direction: column;
+          gap: 1rem;
+          margin-bottom: 3rem;
+          text-align: left;
+          background: rgba(255, 255, 255, 0.03);
+          padding: 1.5rem;
+          border-radius: 20px;
+          border: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        .step {
+          display: flex;
+          align-items: center;
+          gap: 1rem;
+          color: #cbd5e1;
+          font-weight: 600;
+        }
+
+        .step-num {
+          width: 24px;
+          height: 24px;
+          background: rgba(37, 99, 235, 0.2);
+          color: #38bdf8;
+          border-radius: 50%;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          font-size: 0.75rem;
+        }
+
+        .btn-dashboard {
+          width: 100%;
+          padding: 1.25rem;
+          background: #2563eb;
+          color: white;
+          border: none;
+          border-radius: 16px;
+          font-weight: 700;
+          font-size: 1.125rem;
+          cursor: pointer;
+          transition: all 0.3s;
+        }
+
+        .btn-dashboard:hover {
+          background: #1d4ed8;
+          transform: translateY(-2px);
+          box-shadow: 0 10px 25px -5px rgba(37, 99, 235, 0.4);
+        }
+
+        @media (max-width: 640px) {
+          .thanks-card { padding: 2.5rem 1.5rem; }
+          .thanks-content h1 { font-size: 2rem; }
+        }
+      `}</style>
+    </div>
   );
 }

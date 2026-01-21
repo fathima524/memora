@@ -1,17 +1,21 @@
 import { Routes, Route } from "react-router-dom";
 
 // User-facing components
-import Welcome from "./Entry/Welcome"
+import Welcome from "./Entry/Welcome";
 import AuthPage from "./Entry/AuthPage";
-
 import CompleteProfile from "./Entry/CompleteProfile";
-import Navbar from "./Reuseable/Navbar";
-import Footer from "./Reuseable/Footer";
 import Dashboard from "./Dashboard/Dashboard";
 import Flashcard from "./Flashcard/Flashcard";
-import Streaks from "./Flashcard/Streaks";
 import ForgotPasswordPage from "./Entry/ForgotPassword";
 import UpdatePasswordPage from "./Entry/UpdatePassword";
+import ProfilePage from "./Entry/ProfilePage";
+import StreaksPage from "./Flashcard/StreaksPage";
+
+// Subscription & Pricing
+import Pricing from "./Subscription/Pricing";
+import PaymentCheckout from "./Subscription/Payment-checkout";
+import Thanks from "./Subscription/Thanks";
+
 // Admin components
 import AdminDashboard from "./Admin/AdminDashboard";
 import SubjectList from "./Admin/components/SubjectList";
@@ -19,21 +23,13 @@ import SubjectForm from "./Admin/components/SubjectForm";
 import QuestionList from "./Admin/components/QuestionList";
 import QuestionForm from "./Admin/components/QuestionForm";
 import UsersPage from "./Admin/UsersPage";
-import StreaksPage from "./Flashcard/StreaksPage";
-import ProfilePage from "./Entry/ProfilePage";
 import ActiveUsers from "./Admin/components/ActiveUsers";
 import AdminSettings from "./Admin/components/AdminSettings";
+
 // Protected Route component
 import ProtectedRoute from "./components/ProtectedRoute";
-import { useEffect } from "react";
 
 function App() {
-
-  useEffect(() => {
-  console.log("Supabase URL:", import.meta.env.VITE_SUPABASE_URL);
-  console.log("Supabase Key:", import.meta.env.VITE_SUPABASE_ANON_KEY);
-}, []);
-
   return (
     <Routes>
       {/* User-facing routes */}
@@ -43,6 +39,10 @@ function App() {
       <Route path="/forgot-password" element={<ForgotPasswordPage />} />
       <Route path="/update-password" element={<UpdatePasswordPage />} />
       <Route path="/complete-profile" element={<CompleteProfile />} />
+      <Route path="/pricing" element={<Pricing />} />
+      <Route path="/payment-checkout" element={<PaymentCheckout />} />
+      <Route path="/thanks" element={<Thanks />} />
+
       <Route path="/dashboard" element={
         <ProtectedRoute>
           <Dashboard />
@@ -50,7 +50,7 @@ function App() {
       } />
       <Route path="/profilepage" element={
         <ProtectedRoute>
-          <ProfilePage/>
+          <ProfilePage />
         </ProtectedRoute>
       } />
       <Route path="/flashcard" element={
@@ -64,7 +64,6 @@ function App() {
         </ProtectedRoute>
       } />
 
-
       {/* Admin routes */}
       <Route path="/admin" element={
         <ProtectedRoute requiredRole="admin">
@@ -76,13 +75,12 @@ function App() {
           <ActiveUsers />
         </ProtectedRoute>
       } />
-      
       <Route path="/admin/adminsettings" element={
         <ProtectedRoute requiredRole="admin">
-          <AdminSettings/>
+          <AdminSettings />
         </ProtectedRoute>
       } />
-      <Route path="admin/users" element={
+      <Route path="/admin/users" element={
         <ProtectedRoute requiredRole="admin">
           <UsersPage />
         </ProtectedRoute>
@@ -119,7 +117,6 @@ function App() {
       } />
     </Routes>
   );
- 
 }
 
 export default App;

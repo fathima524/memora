@@ -10,355 +10,282 @@ export default function CompleteProfile() {
 
   const navigate = useNavigate();
 
- useEffect(() => {
-  const checkUser = async () => {
-    // Get the session
-    const { data: { session }, error: sessionError } = await supabase.auth.getSession();
-    if (sessionError || !session) {
-      navigate('/login');
+  useEffect(() => {
+    const checkUser = async () => {
+      const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+      if (sessionError || !session) {
+        navigate('/login');
+        return;
+      }
+
+      setUser(session.user);
+
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('profile_completed, full_name, year_of_study')
+        .eq('id', session.user.id)
+        .single();
+
+      if (error && error.code === 'PGRST116') {
+        const { data: newProfile, error: insertError } = await supabase
+          .from('profiles')
+          .insert({
+            id: session.user.id,
+            email: session.user.email,
+            role: 'student',
+            profile_completed: false
+          })
+          .select()
+          .single();
+
+        if (insertError) return;
+        if (newProfile?.profile_completed) navigate('/dashboard');
+      } else if (!error && data?.profile_completed) {
+        navigate('/dashboard');
+      } else if (data) {
+        setName(data.full_name || '');
+        setYear(data.year_of_study || '');
+      }
+    };
+    checkUser();
+  }, [navigate]);
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    if (!name.trim() || !year) {
+      alert("Please complete all fields!");
       return;
     }
+    setLoading(true);
+    try {
+      const { error: updateError } = await supabase
+        .from('profiles')
+        .update({
+          full_name: name.trim(),
+          year_of_study: year,
+          profile_completed: true,
+          last_seen: new Date().toISOString()
+        })
+        .eq('id', user.id);
 
-    setUser(session.user);
+      if (updateError) throw updateError;
 
-    let profile;
-    const { data, error } = await supabase
-      .from('profiles')
-      .select('profile_completed, full_name, year_of_study')
-      .eq('id', session.user.id)
-      .single();
+      const { data: profileData } = await supabase
+        .from('profiles')
+        .select('role')
+        .eq('id', user.id)
+        .single();
 
-    if (error && error.code === 'PGRST116') {
-  // No profile exists, insert a new row with required fields
-  const { data: newProfile, error: insertError } = await supabase
-    .from('profiles')
-    .insert({
-      id: session.user.id,          // ✅ matches auth.uid()
-      email: session.user.email,    // ✅ include email
-      role: 'student',              // ✅ or admin if needed
-      profile_completed: false
-    })
-    .select()
-    .single();
-
-  if (insertError) {
-    console.error('Error creating profile:', insertError);
-    return;
-  }
-
-  profile = newProfile;
-}
-else if (error) {
-      console.error('Error fetching profile:', error);
-      return;
-    } else {
-      profile = data;
-    }
-
-    // If profile already completed, redirect
-    if (profile?.profile_completed) {
-      navigate('/dashboard');
-    } else if (profile?.full_name) {
-      setName(profile.full_name);
-      setYear(profile.year_of_study || '');
+      if (profileData?.role === 'admin') navigate("/admin");
+      else navigate("/dashboard");
+    } catch (error) {
+      alert('Error saving profile. Please try again.');
+    } finally {
+      setLoading(false);
     }
   };
 
-  checkUser();
-}, [navigate]);
-
-const handleSubmit = async (e) => {
-  e.preventDefault();
-
-  if (!name.trim() || !year) {
-    alert("Please complete all fields!");
-    return;
-  }
-
-  setLoading(true);
-
-  try {
-    if (!user) {
-      alert("User not found. Please login again.");
-      setLoading(false);
-      return;
-    }
-
-    // Ensure profile exists for first-time users
-    const { data: existingProfile, error: fetchError } = await supabase
-      .from('profiles')
-      .select('id')
-      .eq('id', user.id)
-      .single();
-
-   if (fetchError && fetchError.code === 'PGRST116') {
-  // Profile not found, but we already handle insert in useEffect.
-  alert('Profile not found. Please refresh and try again.');
-  setLoading(false);
-  return;
-} else if (fetchError) {
-  console.error('Error fetching profile:', fetchError);
-  alert('Error saving profile. Please try again.');
-  setLoading(false);
-  return;
-}
-
-
-    // Update profile
-    const { error: updateError } = await supabase
-      .from('profiles')
-      .update({
-        full_name: name.trim(),
-        year_of_study: year,
-        profile_completed: true
-      })
-      .eq('id', user.id);
-
-    if (updateError) {
-      console.error('Error updating profile:', updateError);
-      alert('Error saving profile. Please try again.');
-      setLoading(false);
-      return;
-    }
-
-    // Save to localStorage
-    localStorage.setItem("userName", name.trim());
-    localStorage.setItem("userYear", year);
-
-    // Navigate based on role
-    const { data: profileData } = await supabase
-      .from('profiles')
-      .select('role')
-      .eq('id', user.id)
-      .single();
-
-    if (profileData?.role === 'admin') navigate("/admin");
-    else navigate("/dashboard");
-
-  } catch (error) {
-    console.error('Profile completion error:', error);
-    alert('Error saving profile. Please try again.');
-  }
-
-  setLoading(false);
-};
-
   return (
-    <>
-      <div className="profile-page">
-        <div className="profile-box">
-          <h1 className="profile-title">Complete Your Profile</h1>
-          <div className="profile-form">
-            <label className="profile-label">Name</label>
-            <input
-              type="text"
-              placeholder="Enter your full name"
-              className="profile-input"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-            />
+    <div className="onboarding-container">
+      <div className="auth-mesh"></div>
 
-            <label className="profile-label">Year of Study</label>
-            <select
-              className="profile-input profile-select"
-              value={year}
-              onChange={(e) => setYear(e.target.value)}
-            >
-              <option value="">Select your year</option>
-              <option value="1st">1st Year</option>
-              <option value="2nd">2nd Year</option>
-              <option value="3rd">3rd Year</option>
-              <option value="4th">4th Year</option>
-              <option value="5th">5th Year</option>
-            </select>
-
-            <button
-              type="button"
-              className="profile-button"
-              onClick={handleSubmit}
-              disabled={loading}
-            >
-              {loading ? 'Saving...' : 'Save Profile'}
-            </button>
-          </div>
+      <div className="onboarding-card glass-panel">
+        <div className="brand-header">
+          <span className="brand-logo">🩺</span>
+          <span className="brand-name">Memora</span>
         </div>
+
+        <div className="onboarding-text">
+          <h1>Final Steps</h1>
+          <p>Complete your profile to personalize your medical revision journey.</p>
+        </div>
+
+        <form onSubmit={handleSubmit} className="onboarding-form">
+          <div className="form-group">
+            <label>Full Name</label>
+            <div className="input-with-icon">
+              <input
+                type="text"
+                placeholder="Dr. John Doe"
+                value={name}
+                onChange={e => setName(e.target.value)}
+                required
+              />
+            </div>
+          </div>
+
+          <div className="form-group">
+            <label>Current Status / Year</label>
+            <select
+              value={year}
+              onChange={e => setYear(e.target.value)}
+              required
+              className="premium-select"
+            >
+              <option value="">Select your stage...</option>
+              <option value="1st Year">1st Year MBBS</option>
+              <option value="2nd Year">2nd Year MBBS</option>
+              <option value="3rd Year">3rd Year MBBS</option>
+              <option value="Final Year">Final Year MBBS</option>
+              <option value="Intern">Intern / Resident</option>
+              <option value="Post-Grad">Post-Graduate</option>
+            </select>
+          </div>
+
+          <button type="submit" className="btn-finish" disabled={loading}>
+            {loading ? <div className="spinner"></div> : 'Start My Journey'}
+          </button>
+        </form>
       </div>
 
       <style>{`
-        .profile-page {
+        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
+
+        .onboarding-container {
           min-height: 100vh;
           width: 100vw;
-          background: linear-gradient(135deg, #27374d 0%, #526d82 40%, #9db2bf 70%, #dde6ed 100%);
-          background-attachment: fixed;
-          background-repeat: no-repeat;
-          background-size: cover;
+          background: #0f172a;
           display: flex;
           align-items: center;
           justify-content: center;
-          padding: 20px;
-          font-family: "Inter", "Segoe UI", "Roboto", sans-serif;
-          margin: 0;
-          box-sizing: border-box;
+          font-family: 'Plus Jakarta Sans', sans-serif;
+          position: relative;
+          overflow: hidden;
+          padding: 2rem;
         }
 
-        .profile-box {
-          background: rgba(255, 255, 255, 0.95);
-          backdrop-filter: blur(10px);
-          border-radius: 20px;
-          padding: 50px;
+        .auth-mesh {
+          position: absolute;
+          top: 0; left: 0; right: 0; bottom: 0;
+          background: 
+            radial-gradient(circle at 0% 0%, rgba(37, 99, 235, 0.15) 0%, transparent 50%),
+            radial-gradient(circle at 100% 100%, rgba(56, 189, 248, 0.1) 0%, transparent 50%);
+          z-index: 1;
+        }
+
+        .glass-panel {
+          background: rgba(30, 41, 59, 0.6);
+          backdrop-filter: blur(20px);
+          border: 1px solid rgba(255, 255, 255, 0.1);
+          border-radius: 36px;
+          padding: 4rem;
+          position: relative;
+          z-index: 10;
+          box-shadow: 0 40px 100px -20px rgba(0, 0, 0, 0.5);
           width: 100%;
-          max-width: 450px;
-          box-shadow: 0 20px 40px rgba(39, 55, 77, 0.3), 0 8px 16px rgba(39, 55, 77, 0.2);
-          border: 1px solid rgba(255, 255, 255, 0.2);
+          max-width: 500px;
         }
 
-        .profile-title {
-          font-size: 28px;
-          font-weight: 700;
-          color: #27374d;
+        .brand-header {
+          display: flex;
+          align-items: center;
+          gap: 0.75rem;
+          margin-bottom: 2.5rem;
+          justify-content: center;
+        }
+
+        .brand-logo { font-size: 1.75rem; }
+        .brand-name { font-weight: 800; font-size: 1.5rem; color: white; letter-spacing: -1px; }
+
+        .onboarding-text {
           text-align: center;
-          margin-bottom: 30px;
-          letter-spacing: -0.5px;
+          margin-bottom: 3rem;
         }
 
-        .profile-form {
+        .onboarding-text h1 {
+          font-size: 2.25rem;
+          font-weight: 800;
+          color: white;
+          margin-bottom: 0.75rem;
+          letter-spacing: -1.5px;
+        }
+
+        .onboarding-text p {
+          color: #94a3b8;
+          font-size: 1.1rem;
+          line-height: 1.6;
+        }
+
+        .onboarding-form {
           display: flex;
           flex-direction: column;
-          gap: 20px;
+          gap: 1.75rem;
         }
 
-        .profile-label {
-          font-size: 14px;
-          font-weight: 600;
-          color: #526d82;
-          margin-bottom: 8px;
-          display: block;
+        .form-group {
+          display: flex;
+          flex-direction: column;
+          gap: 0.75rem;
         }
 
-        .profile-input {
-          width: 100%;
-          padding: 16px;
-          border: 2px solid #dde6ed;
-          border-radius: 12px;
-          font-size: 16px;
-          color: #27374d;
-          background-color: rgba(255, 255, 255, 0.8);
-          transition: all 0.3s ease;
-          outline: none;
-          box-sizing: border-box;
-          letter-spacing: 0.5px;
+        .form-group label {
+          font-size: 0.875rem;
+          font-weight: 700;
+          color: #cbd5e1;
+          margin-left: 0.25rem;
         }
 
-        .profile-input:focus {
-          border-color: #526d82;
-          background-color: rgba(255, 255, 255, 1);
-          box-shadow: 0 0 0 3px rgba(82, 109, 130, 0.1);
-        }
-
-        .profile-select {
-          cursor: pointer;
-          appearance: none;
-          background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%23526d82' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e");
-          background-position: right 12px center;
-          background-repeat: no-repeat;
-          background-size: 16px;
-          padding-right: 40px;
-        }
-
-        .profile-select:focus {
-          background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%2327374d' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e");
-        }
-
-        .profile-button {
-          width: 100%;
-          padding: 16px;
-          background: linear-gradient(135deg, #27374d 0%, #526d82 100%);
+        .form-group input, .premium-select {
+          padding: 1.125rem 1.25rem;
+          background: rgba(15, 23, 42, 0.6);
+          border: 1px solid rgba(255, 255, 255, 0.1);
+          border-radius: 16px;
           color: white;
+          font-family: inherit;
+          font-size: 1rem;
+          outline: none;
+          transition: all 0.3s;
+        }
+
+        .form-group input:focus, .premium-select:focus {
+          border-color: #2563eb;
+          background: rgba(15, 23, 42, 0.8);
+          box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.1);
+        }
+
+        .btn-finish {
+          background: #2563eb;
+          color: white;
+          padding: 1.25rem;
           border: none;
-          border-radius: 12px;
-          font-size: 16px;
-          font-weight: 600;
+          border-radius: 16px;
+          font-size: 1.1rem;
+          font-weight: 800;
           cursor: pointer;
-          transition: all 0.3s ease;
-          margin-top: 10px;
+          transition: all 0.3s;
+          margin-top: 1rem;
+          box-shadow: 0 10px 20px -5px rgba(37, 99, 235, 0.4);
+          display: flex;
+          align-items: center;
+          justify-content: center;
         }
 
-        .profile-button:hover {
-          background: linear-gradient(135deg, #1e2a3a 0%, #455a6b 100%);
+        .btn-finish:hover {
+          background: #1d4ed8;
           transform: translateY(-2px);
-          box-shadow: 0 8px 20px rgba(39, 55, 77, 0.4);
+          box-shadow: 0 20px 30px -5px rgba(37, 99, 235, 0.5);
         }
 
-        .profile-button:active {
-          transform: translateY(0);
+        .spinner {
+          width: 24px;
+          height: 24px;
+          border: 3px solid rgba(255,255,255,0.3);
+          border-radius: 50%;
+          border-top-color: #fff;
+          animation: spin 0.8s linear infinite;
         }
 
-        .profile-button:disabled {
-          opacity: 0.6;
-          cursor: not-allowed;
-          transform: none;
-        }
+        @keyframes spin { to { transform: rotate(360deg); } }
 
-        @media (max-width: 768px) {
-          .profile-page {
-            padding: 15px;
-            min-height: 100vh;
-            min-height: 100dvh;
-          }
-
-          .profile-box {
-            padding: 40px 30px;
-            max-width: 95%;
-            width: 100%;
-          }
-
-          .profile-title {
-            font-size: 24px;
-          }
-        }
-
-        @media (max-width: 480px) {
-          .profile-page {
-            padding: 10px;
-          }
-
-          .profile-box {
-            padding: 30px 20px;
-            max-width: 100%;
-            border-radius: 15px;
-          }
-
-          .profile-title {
-            font-size: 22px;
-            margin-bottom: 25px;
-          }
-
-          .profile-input {
-            padding: 14px;
-            font-size: 16px;
-          }
-
-          .profile-select {
-            padding-right: 36px;
-          }
-
-          .profile-button {
-            padding: 14px;
-            font-size: 16px;
-          }
-        }
-
-        @media (max-width: 320px) {
-          .profile-box {
-            padding: 25px 15px;
-            border-radius: 12px;
-          }
-
-          .profile-title {
-            font-size: 20px;
+        @media (max-width: 640px) {
+          .glass-panel {
+            padding: 3rem 2rem;
+            border-radius: 28px;
+            border: none;
+            background: rgba(30, 41, 59, 0.8);
           }
         }
       `}</style>
-    </>
+    </div>
   );
 }

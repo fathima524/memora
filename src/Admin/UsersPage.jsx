@@ -1,6 +1,14 @@
 import React, { useEffect, useState } from "react";
 import { supabase } from "../supabase/supabaseClient";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
+import {
+  Users,
+  Loader,
+  ArrowLeft,
+  Shield,
+  Mail,
+  Calendar
+} from 'lucide-react';
 
 export default function UsersPage() {
   const [users, setUsers] = useState([]);
@@ -22,78 +30,130 @@ export default function UsersPage() {
     setLoading(false);
   };
 
-  return (
-    <div style={styles.container}>
-
-      {/* Header Card */}
-      <div style={styles.headerCard}>
-        <h2 style={styles.heading}>User Management</h2>
-        <p style={styles.subtitle}>
-          Manage all registered users in the system
-        </p>
-        <div style={styles.statsContainer}>
-          <div style={styles.statBadge}>
-            Total Users: {users.length}
+  if (loading) {
+    return (
+      <div className="users-page">
+        <div className="auth-mesh"></div>
+        <div className="full-screen-loader">
+          <div className="loader-content">
+            <Loader size={48} className="spinner" />
+            <h2 className="brand-name">Memora</h2>
           </div>
         </div>
-      </div>
+        <style>{`
+        .full-screen-loader {
+          position: fixed;
+          inset: 0;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          z-index: 50;
+        }
 
-      {/* Users Table */}
-      {loading ? (
-        <div style={styles.loadingCard}>
-          <div style={styles.loadingSpinner}></div>
-          <p style={styles.loadingText}>Loading users...</p>
-        </div>
-      ) : (
-        <div style={styles.tableCard}>
-          <div style={styles.tableContainer}>
-            <table style={styles.table}>
+        .loader-content {
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          gap: 1rem;
+        }
+
+        .spinner {
+          color: #38bdf8;
+          animation: spin 1s linear infinite;
+        }
+
+        .brand-name {
+          font-size: 1.5rem;
+          font-weight: 700;
+          background: linear-gradient(135deg, #38bdf8 0%, #2563eb 100%);
+          -webkit-background-clip: text;
+          -webkit-text-fill-color: transparent;
+          margin: 0;
+          letter-spacing: -0.02em;
+        }
+
+        .loader-content p {
+          font-size: 1rem;
+          color: #94a3b8;
+          margin: 0;
+        }
+
+        @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+        `}</style>
+      </div>
+    );
+  }
+
+  return (
+    <div className="users-page">
+      <div className="auth-mesh"></div>
+
+      <main className="users-main">
+        {/* Header Section */}
+        <section className="page-header">
+          <div className="header-content">
+            <div className="header-left">
+              <Link to="/admin" className="back-link">
+                <ArrowLeft size={16} />
+                Back to Dashboard
+              </Link>
+              <div className="title-row">
+                <div className="icon-badge">
+                  <Users size={24} />
+                </div>
+                <div>
+                  <h1>User Management</h1>
+                  <p className="header-subtitle">View and manage registered users</p>
+                </div>
+              </div>
+            </div>
+            <div className="stat-card">
+              <span className="stat-label">Total Users</span>
+              <span className="stat-value">{users.length}</span>
+            </div>
+          </div>
+        </section>
+
+        {/* Users Table Card */}
+        <div className="content-card">
+          <div className="table-container">
+            <table>
               <thead>
-                <tr style={styles.tableHeaderRow}>
-                  <th style={styles.tableHeader}>ID</th>
-                  <th style={styles.tableHeader}>Email</th>
-                  <th style={styles.tableHeader}>Name</th>
-                  <th style={styles.tableHeader}>Role</th>
-                  <th style={styles.tableHeader}>Created At</th>
+                <tr>
+                  <th>ID</th>
+                  <th>
+                    <div className="th-content">
+                      <Mail size={14} /> Email
+                    </div>
+                  </th>
+                  <th>Name</th>
+                  <th>
+                    <div className="th-content">
+                      <Shield size={14} /> Role
+                    </div>
+                  </th>
+                  <th>
+                    <div className="th-content">
+                      <Calendar size={14} /> Joined
+                    </div>
+                  </th>
                 </tr>
               </thead>
               <tbody>
-                {users.map((user, index) => (
-                  <tr 
-                    key={user.id} 
-                    style={{
-                      ...styles.tableRow,
-                      backgroundColor: index % 2 === 0 ? '#f8fafc' : 'white'
-                    }}
-                    onMouseEnter={(e) => {
-                      e.target.style.backgroundColor = '#e2e8f0';
-                      e.target.style.transform = 'translateY(-1px)';
-                    }}
-                    onMouseLeave={(e) => {
-                      e.target.style.backgroundColor = index % 2 === 0 ? '#f8fafc' : 'white';
-                      e.target.style.transform = 'translateY(0)';
-                    }}
-                  >
-                    <td style={styles.tableCell}>{user.id}</td>
-                    <td style={styles.tableCell}>
-                      <span style={styles.emailText}>{user.email}</span>
+                {users.map((user) => (
+                  <tr key={user.id}>
+                    <td className="id-cell">{user.id.substring(0, 8)}...</td>
+                    <td className="email-cell">
+                      {user.email || <span className="text-muted">No Email</span>}
                     </td>
-                    <td style={styles.tableCell}>
-                      <span style={styles.nameText}>{user.full_name || 'N/A'}</span>
-                    </td>
-                    <td style={styles.tableCell}>
-                      <span style={{
-                        ...styles.roleBadge,
-                        backgroundColor: user.role === 'admin' ? '#2d3748' : '#4299e1',
-                        color: 'white'
-                      }}>
+                    <td className="name-cell">{user.full_name || 'N/A'}</td>
+                    <td>
+                      <span className={`role-badge ${user.role === 'admin' ? 'admin' : 'user'}`}>
                         {user.role || 'user'}
                       </span>
                     </td>
-                    <td style={styles.tableCell}>
-                      <span style={styles.dateText}>
-                        {new Date(user.created_at).toLocaleString()}
-                      </span>
+                    <td className="date-cell">
+                      {new Date(user.created_at).toLocaleDateString()}
                     </td>
                   </tr>
                 ))}
@@ -101,196 +161,238 @@ export default function UsersPage() {
             </table>
           </div>
         </div>
-      )}
+      </main>
 
-      {/* Back Button at Bottom */}
-      {/* Back Button at Bottom Left */}
-<button 
-  style={styles.backButtonBottomLeft} 
-  onClick={() => navigate(-1)}
->
-  ← Back
-</button>
+      <style>{`
+        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
 
+        .users-page {
+          min-height: 100vh;
+          background: #060912;
+          color: white;
+          font-family: 'Plus Jakarta Sans', sans-serif;
+          position: relative;
+          overflow-x: hidden;
+        }
+
+        .auth-mesh {
+          position: absolute;
+          top: 0; left: 0; right: 0; bottom: 0;
+          background: 
+            radial-gradient(circle at 10% 10%, rgba(37, 99, 235, 0.1) 0%, transparent 40%),
+            radial-gradient(circle at 90% 90%, rgba(56, 189, 248, 0.08) 0%, transparent 40%),
+            radial-gradient(circle at 50% 50%, rgba(99, 102, 241, 0.02) 0%, transparent 60%);
+          z-index: 0;
+          pointer-events: none;
+        }
+
+        .users-main {
+          max-width: 1200px;
+          margin: 0 auto;
+          padding: 2rem 1.5rem 6rem;
+          position: relative;
+          z-index: 1;
+        }
+
+        /* Header */
+        .page-header {
+          background: linear-gradient(135deg, rgba(15, 23, 42, 0.9) 0%, rgba(255, 255, 255, 0.1) 100%);
+          border-radius: 24px;
+          border: 1px solid rgba(255, 255, 255, 0.1);
+          backdrop-filter: blur(20px);
+          padding: 2rem;
+          margin-bottom: 2rem;
+        }
+
+        .header-content {
+          display: flex;
+          justify-content: space-between;
+          align-items: flex-end;
+        }
+
+        .header-left {
+          display: flex;
+          flex-direction: column;
+          gap: 1rem;
+        }
+
+        .back-link {
+          display: inline-flex;
+          align-items: center;
+          gap: 0.5rem;
+          color: #94a3b8;
+          text-decoration: none;
+          font-size: 0.9rem;
+          transition: 0.2s;
+        }
+
+        .back-link:hover {
+          color: #38bdf8;
+        }
+
+        .title-row {
+          display: flex;
+          align-items: center;
+          gap: 1rem;
+        }
+
+        .icon-badge {
+          width: 56px;
+          height: 56px;
+          background: rgba(56, 189, 248, 0.1);
+          border: 1px solid rgba(56, 189, 248, 0.3);
+          border-radius: 16px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          color: #38bdf8;
+        }
+
+        .page-header h1 {
+          font-size: 2rem;
+          font-weight: 700;
+          margin: 0 0 0.25rem 0;
+          color: white;
+        }
+
+        .header-subtitle {
+          color: #94a3b8;
+          margin: 0;
+        }
+
+        .stat-card {
+          background: rgba(255, 255, 255, 0.05);
+          border: 1px solid rgba(255, 255, 255, 0.1);
+          padding: 1rem 1.5rem;
+          border-radius: 16px;
+          text-align: right;
+        }
+
+        .stat-label {
+          display: block;
+          font-size: 0.8rem;
+          text-transform: uppercase;
+          color: #94a3b8;
+          font-weight: 600;
+          margin-bottom: 0.25rem;
+        }
+
+        .stat-value {
+          font-size: 1.5rem;
+          font-weight: 700;
+          color: #38bdf8;
+        }
+
+        /* Content Card */
+        .content-card {
+          background: #f8fafc;
+          border: 1px solid #e2e8f0;
+          border-radius: 24px;
+          padding: 0;
+          overflow: hidden;
+          box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+        }
+
+        .table-container {
+          overflow-x: auto;
+        }
+
+        table {
+          width: 100%;
+          border-collapse: collapse;
+          text-align: left;
+        }
+
+        th {
+          padding: 1.25rem 1.5rem;
+          background: #f1f5f9;
+          color: #475569;
+          font-weight: 600;
+          font-size: 0.85rem;
+          text-transform: uppercase;
+          border-bottom: 1px solid #e2e8f0;
+        }
+
+        .th-content {
+          display: flex;
+          align-items: center;
+          gap: 0.5rem;
+        }
+
+        td {
+          padding: 1.25rem 1.5rem;
+          border-bottom: 1px solid #e2e8f0;
+          color: #1e293b;
+          font-size: 0.95rem;
+        }
+
+        tr:last-child td {
+          border-bottom: none;
+        }
+
+        tr:hover td {
+          background: #f8fafc;
+        }
+
+        .id-cell {
+          font-family: monospace;
+          color: #64748b;
+        }
+
+        .email-cell {
+          font-weight: 500;
+        }
+
+        .text-muted {
+          color: #94a3b8;
+          font-style: italic;
+          font-weight: 400;
+        }
+
+        .name-cell {
+          font-weight: 600;
+        }
+
+        .role-badge {
+          display: inline-flex;
+          padding: 0.25rem 0.75rem;
+          border-radius: 6px;
+          font-size: 0.75rem;
+          font-weight: 700;
+          text-transform: uppercase;
+        }
+
+        .role-badge.admin {
+          background: #e0e7ff;
+          color: #4338ca;
+        }
+
+        .role-badge.user {
+          background: #dbeafe;
+          color: #1e40af;
+        }
+
+        .date-cell {
+          color: #64748b;
+        }
+
+        @media (max-width: 768px) {
+          .header-content {
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 1.5rem;
+          }
+          
+          .stat-card {
+            width: 100%;
+            text-align: left;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-sizing: border-box;
+          }
+        }
+      `}</style>
     </div>
   );
 }
-
-// Styles (unchanged, only backButton style used)
-const styles = {
-  container: {
-    minHeight: '100vh',
-    width: '100%',
-    background: 'linear-gradient(135deg, #1a202c 0%, #2d3748 40%, #4a5568 70%, #718096 100%)',
-    padding: window.innerWidth <= 768 ? '1rem' : '2rem',
-    fontFamily: "'IBM Plex Sans', 'Segoe UI', system-ui, sans-serif",
-    boxSizing: 'border-box'
-  },
-
-  headerCard: {
-    background: 'linear-gradient(135deg, rgba(26, 32, 44, 0.97) 0%, rgba(45, 55, 72, 0.97) 100%)',
-    backdropFilter: 'blur(20px)',
-    borderRadius: '8px',
-    padding: window.innerWidth <= 768 ? '1.5rem' : '2rem',
-    boxShadow: '0 4px 6px rgba(0, 0, 0, 0.05), 0 10px 15px rgba(0, 0, 0, 0.1)',
-    border: '1px solid rgba(203, 213, 224, 0.3)',
-    marginBottom: '2rem',
-    color: 'white'
-  },
-
-  heading: {
-    fontSize: window.innerWidth <= 768 ? '1.75rem' : '2.25rem',
-    fontWeight: '600',
-    color: 'white',
-    lineHeight: '1.2',
-    letterSpacing: '-0.025em',
-    margin: '0 0 0.5rem 0'
-  },
-
-  subtitle: {
-    fontSize: window.innerWidth <= 768 ? '0.875rem' : '1rem',
-    fontWeight: '400',
-    opacity: 0.8,
-    marginBottom: '1.5rem',
-    lineHeight: '1.4'
-  },
-
-  statsContainer: {
-    display: 'flex',
-    gap: '1rem',
-    alignItems: 'center'
-  },
-
-  statBadge: {
-    background: 'linear-gradient(135deg, #2b6cb0 0%, #2c5282 100%)',
-    color: 'white',
-    padding: '0.5rem 1rem',
-    borderRadius: '6px',
-    fontSize: '0.875rem',
-    fontWeight: '600',
-    textTransform: 'uppercase',
-    letterSpacing: '0.05em'
-  },
-
-  loadingCard: {
-    background: 'rgba(255, 255, 255, 0.98)',
-    backdropFilter: 'blur(20px)',
-    borderRadius: '8px',
-    padding: '3rem 2rem',
-    boxShadow: '0 4px 6px rgba(0, 0, 0, 0.05), 0 10px 15px rgba(0, 0, 0, 0.1)',
-    border: '1px solid rgba(203, 213, 224, 0.5)',
-    textAlign: 'center',
-    display: 'flex',
-    flexDirection: 'column',
-    alignItems: 'center',
-    gap: '1rem'
-  },
-
-  loadingSpinner: {
-    width: '40px',
-    height: '40px',
-    border: '4px solid #e2e8f0',
-    borderTop: '4px solid #2d3748',
-    borderRadius: '50%',
-    animation: 'spin 1s linear infinite'
-  },
-
-  loadingText: {
-    fontSize: '1rem',
-    color: '#4a5568',
-    fontWeight: '500',
-    margin: 0
-  },
-
-  tableCard: {
-    background: 'rgba(255, 255, 255, 0.98)',
-    backdropFilter: 'blur(20px)',
-    borderRadius: '8px',
-    boxShadow: '0 4px 6px rgba(0, 0, 0, 0.05), 0 10px 15px rgba(0, 0, 0, 0.1)',
-    border: '1px solid rgba(203, 213, 224, 0.5)',
-    overflow: 'hidden'
-  },
-
-  tableContainer: {
-    overflowX: 'auto'
-  },
-
-  table: {
-    width: '100%',
-    borderCollapse: 'collapse',
-    fontSize: '0.875rem'
-  },
-
-  tableHeaderRow: {
-    background: 'linear-gradient(135deg, #2d3748 0%, #4a5568 100%)'
-  },
-
-  tableHeader: {
-    padding: '1rem 1.25rem',
-    textAlign: 'left',
-    fontWeight: '600',
-    color: 'white',
-    fontSize: '0.875rem',
-    textTransform: 'uppercase',
-    letterSpacing: '0.05em',
-    borderBottom: '2px solid #1a202c'
-  },
-
-  tableRow: {
-    transition: 'all 0.2s ease',
-    cursor: 'pointer'
-  },
-
-  tableCell: {
-    padding: '1rem 1.25rem',
-    borderBottom: '1px solid #e2e8f0',
-    verticalAlign: 'middle'
-  },
-
-  emailText: {
-    color: '#2d3748',
-    fontWeight: '500'
-  },
-
-  nameText: {
-    color: '#1a202c',
-    fontWeight: '600'
-  },
-
-  roleBadge: {
-    padding: '0.25rem 0.75rem',
-    borderRadius: '4px',
-    fontSize: '0.75rem',
-    fontWeight: '600',
-    textTransform: 'uppercase',
-    letterSpacing: '0.05em'
-  },
-
-  dateText: {
-    color: '#718096',
-    fontSize: '0.8125rem',
-    fontFamily: 'monospace'
-  },
-
-backButtonBottomLeft: {
-  position: 'fixed',
-  bottom: '20px',
-  left: '20px',
-  display: 'inline-flex',
-  alignItems: 'center',
-  gap: '0.5rem',
-  padding: '0.75rem 1.5rem',
-  background: 'linear-gradient(135deg, #2d3748 0%, #4a5568 100%)',
-  color: 'white',
-  textDecoration: 'none',
-  borderRadius: '6px',
-  fontSize: '0.875rem',
-  fontWeight: '500',
-  transition: 'all 0.2s ease',
-  boxShadow: '0 2px 4px rgba(0, 0, 0, 0.1)',
-  border: 'none',
-  cursor: 'pointer',
-  zIndex: 1000
-}
-
-};

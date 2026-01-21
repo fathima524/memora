@@ -17,13 +17,14 @@ const ProtectedRoute = ({ children, requiredRole = null }) => {
           navigate('/login');
           return;
         }
+
+        // If they are on a verification flow, let them be
         if (!session.user.email_confirmed_at) {
           await supabase.auth.signOut();
           alert("Please verify your email before logging in.");
           navigate("/login");
           return;
         }
-
 
         setUser(session.user);
 
@@ -51,7 +52,7 @@ const ProtectedRoute = ({ children, requiredRole = null }) => {
               id: session.user.id,
               full_name: session.user.user_metadata?.full_name || "",
               profile_completed: false,
-              role: "student" // 🔒 always student
+              role: "student"
             })
             .select()
             .single();
@@ -73,7 +74,7 @@ const ProtectedRoute = ({ children, requiredRole = null }) => {
 
         setUserRole(profile.role);
 
-        // If required role is passed, check it (but dashboard is same for all)
+        // If required role is passed, check it
         if (requiredRole && profile.role !== requiredRole) {
           navigate('/dashboard');
           return;
@@ -102,38 +103,130 @@ const ProtectedRoute = ({ children, requiredRole = null }) => {
 
   if (loading) {
     return (
-      <div style={{
-        minHeight: '100vh',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        background: 'linear-gradient(135deg, #27374d 0%, #526d82 40%, #9db2bf 70%, #dde6ed 100%)',
-        fontFamily: "'Inter', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif"
-      }}>
-        <div style={{
-          background: 'rgba(255, 255, 255, 0.95)',
-          padding: '2rem',
-          borderRadius: '20px',
-          textAlign: 'center',
-          boxShadow: '0 20px 40px rgba(39, 55, 77, 0.3)'
-        }}>
-          <div style={{
-            width: '40px',
-            height: '40px',
-            border: '4px solid #e2e8f0',
-            borderTop: '4px solid #27374d',
-            borderRadius: '50%',
-            animation: 'spin 1s linear infinite',
-            margin: '0 auto 1rem'
-          }}></div>
-          <p style={{ color: '#27374d', fontSize: '1.1rem', fontWeight: '600' }}>
-            Checking authentication...
-          </p>
+      <div className="auth-loader-screen">
+        <div className="auth-loader-mesh"></div>
+        <div className="auth-loader-content">
+          <div className="auth-loader-logo">
+            <span className="logo-emoji">🩺</span>
+            <div className="logo-pulse"></div>
+          </div>
+          <h2 className="auth-loader-title">Memora</h2>
+          <p className="auth-loader-text">Preparing your medical dashboard...</p>
+          <div className="auth-loader-bar">
+            <div className="auth-loader-progress"></div>
+          </div>
         </div>
+
         <style>{`
-          @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
+          @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
+
+          .auth-loader-screen {
+            min-height: 100vh;
+            width: 100vw;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: #0f172a;
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            position: fixed;
+            top: 0;
+            left: 0;
+            z-index: 9999;
+            overflow: hidden;
+          }
+
+          .auth-loader-mesh {
+            position: absolute;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: 
+              radial-gradient(circle at 50% 50%, rgba(37, 99, 235, 0.15) 0%, transparent 50%),
+              radial-gradient(circle at 100% 0%, rgba(56, 189, 248, 0.1) 0%, transparent 40%);
+            z-index: 1;
+            animation: moveMesh 10s infinite alternate ease-in-out;
+          }
+
+          @keyframes moveMesh {
+            0% { transform: scale(1) translate(0, 0); }
+            100% { transform: scale(1.1) translate(20px, 20px); }
+          }
+
+          .auth-loader-content {
+            position: relative;
+            z-index: 2;
+            text-align: center;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 1.5rem;
+          }
+
+          .auth-loader-logo {
+            position: relative;
+            width: 80px;
+            height: 80px;
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 24px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 0.5rem;
+          }
+
+          .logo-emoji {
+            font-size: 2rem;
+            z-index: 1;
+          }
+
+          .logo-pulse {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            background: rgba(37, 99, 235, 0.2);
+            border-radius: 24px;
+            animation: pulseLogo 2s infinite cubic-bezier(0.4, 0, 0.6, 1);
+          }
+
+          @keyframes pulseLogo {
+            0% { transform: scale(0.95); opacity: 0.8; }
+            50% { transform: scale(1.1); opacity: 0.3; }
+            100% { transform: scale(0.95); opacity: 0.8; }
+          }
+
+          .auth-loader-title {
+            font-size: 2rem;
+            font-weight: 800;
+            color: white;
+            letter-spacing: -1px;
+            margin: 0;
+          }
+
+          .auth-loader-text {
+            color: #94a3b8;
+            font-size: 1rem;
+            font-weight: 500;
+          }
+
+          .auth-loader-bar {
+            width: 200px;
+            height: 4px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 99px;
+            overflow: hidden;
+            margin-top: 0.5rem;
+          }
+
+          .auth-loader-progress {
+            width: 40%;
+            height: 100%;
+            background: linear-gradient(90deg, #2563eb, #38bdf8);
+            border-radius: 99px;
+            animation: slideProgress 1.5s infinite ease-in-out;
+          }
+
+          @keyframes slideProgress {
+            0% { transform: translateX(-100%); }
+            100% { transform: translateX(250%); }
           }
         `}</style>
       </div>

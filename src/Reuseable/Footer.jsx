@@ -1,252 +1,360 @@
-import React, { useState } from 'react';
-import { Mail } from 'lucide-react';
+import React from 'react';
+import { Mail, Linkedin, Github, Globe, Heart } from 'lucide-react';
+import { Link } from 'react-router-dom';
 
-export default function Footer() {
-  const [emailHovered, setEmailHovered] = useState(false);
+export default function Footer({ minimal = false }) {
+  const currentYear = new Date().getFullYear();
+
+  if (minimal) {
+    return (
+      <footer className="memora-footer minimal">
+        <div className="footer-content">
+          <div className="minimal-footer-grid">
+            <span className="minimal-brand">Dashboard</span>
+            <div className="minimal-support">
+              <span className="support-label">Contact us from here:</span>
+              <a href="mailto:memora.education@gmail.com">memora.education@gmail.com</a>
+            </div>
+          </div>
+          <div className="footer-bottom">
+            <div className="copyright">© {currentYear} Memora</div>
+          </div>
+        </div>
+        <style>{`
+          .memora-footer.minimal {
+            background: #0f172a;
+            padding: 3rem 2rem;
+            border-top: 1px solid rgba(255, 255, 255, 0.05);
+            font-family: 'Plus Jakarta Sans', sans-serif;
+          }
+          .minimal-footer-grid {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 2rem;
+          }
+          .minimal-brand {
+            font-size: 1.5rem;
+            font-weight: 800;
+            color: white;
+            letter-spacing: -1px;
+          }
+          .minimal-support {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            color: #94a3b8;
+            font-size: 0.95rem;
+          }
+          .support-label { font-weight: 500; }
+          .minimal-support a {
+            color: #38bdf8;
+            text-decoration: none;
+            font-weight: 700;
+            transition: color 0.2s;
+          }
+          .minimal-support a:hover { color: white; text-decoration: underline; }
+          .footer-bottom {
+            padding-top: 2rem;
+            border-top: 1px solid rgba(255, 255, 255, 0.03);
+            display: flex;
+            justify-content: center;
+            font-size: 0.85rem;
+            color: #64748b;
+          }
+          @media (max-width: 640px) {
+            .minimal-footer-grid { flex-direction: column; gap: 1rem; text-align: center; }
+            .minimal-support { flex-direction: column; gap: 0.25rem; }
+          }
+        `}</style>
+      </footer>
+    );
+  }
 
   return (
-    <footer className="footer">
-      <div className="footer-container">
-        
-        {/* Branding */}
-        <div className="footer-branding">
-          <div className="footer-logo">
-            <span className="logo-icon">⚡</span>
-            <span className="logo-text">Flash-doc</span>
+    <footer className="memora-footer">
+      <div className="footer-mesh"></div>
+
+      <div className="footer-content">
+        <div className="footer-grid">
+          {/* Brand Section */}
+          <div className="footer-column brand-col">
+            <div className="footer-logo">
+              <span className="logo-emoji">🩺</span>
+              <span className="logo-name">Memora</span>
+            </div>
+            <p className="footer-description">
+              Elevating medical education through science-based active recall and intelligent spaced repetition. Built by students, for students.
+            </p>
+            <div className="footer-socials">
+              <a href="mailto:memora.education@gmail.com" className="social-link" title="Email Us">
+                <Mail size={18} />
+              </a>
+              <a href="#" className="social-link" title="Twitter">
+                <Globe size={18} />
+              </a>
+            </div>
           </div>
-          <p className="footer-tagline">Quick Medical Revision Made Simple</p>
+
+          {/* Team Section */}
+          <div className="footer-column">
+            <h4 className="column-title">The Visionaries</h4>
+            <div className="team-list">
+              <div className="team-member">
+                <div className="member-info">
+                  <span className="member-name">Ryyan Sheikh</span>
+                  <span className="member-role">Founder & Visionary</span>
+                </div>
+                <a
+                  href="https://www.linkedin.com/in/ryyan-sheikh-65175022a"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="member-link"
+                >
+                  <Linkedin size={16} />
+                </a>
+              </div>
+              <div className="team-member">
+                <div className="member-info">
+                  <span className="member-name">Fathima Hijaab Irfan</span>
+                  <span className="member-role">Lead Developer</span>
+                </div>
+                <a
+                  href="https://www.linkedin.com/in/fathima-hijaab-irfan"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="member-link"
+                >
+                  <Linkedin size={16} />
+                </a>
+              </div>
+            </div>
+          </div>
+
+          {/* Support Section */}
+          <div className="footer-column">
+            <h4 className="column-title">Support</h4>
+            <div className="support-direct">
+              <span style={{ fontSize: '0.85rem', color: '#64748b', display: 'block', marginBottom: '0.25rem' }}>
+                Contact us from here:
+              </span>
+              <a href="mailto:memora.education@gmail.com" style={{ color: '#38bdf8', fontWeight: '700', fontSize: '1rem', textDecoration: 'none' }}>
+                memora.education@gmail.com
+              </a>
+            </div>
+          </div>
         </div>
 
-        {/* Copyright */}
-        <div className="footer-copyright">
-          <span>© 2025 Flash-doc</span>
-          <span className="separator">•</span>
-          <span>Made with care for medical education</span>
-        </div>
-
-        {/* Contact */}
-        <div className="footer-contact">
-          <div className="contact-content">
-            <Mail className="contact-icon" size={16} />
-            <a 
-              href="mailto:memora.education@gmail.com"
-              className={`contact-email ${emailHovered ? 'hovered' : ''}`}
-              onMouseEnter={() => setEmailHovered(true)}
-              onMouseLeave={() => setEmailHovered(false)}
-            >
-              memora.education@gmail.com
-            </a>
+        <div className="footer-bottom">
+          <div className="copyright">
+            © {currentYear} Memora. All rights reserved.
+          </div>
+          <div className="crafted-by">
+            Crafted with <Heart size={14} className="heart-icon" /> for the Medical Community
           </div>
         </div>
       </div>
 
-      {/* CSS */}
       <style>{`
-        .footer {
-          background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
-          color: #2d3748;
-          padding: 2rem;
-          font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-          border-top: 1px solid rgba(203, 213, 225, 0.6);
+        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
+
+        .memora-footer {
+          background: #0f172a;
+          color: #94a3b8;
+          padding: 6rem 2rem 2rem;
+          font-family: 'Plus Jakarta Sans', sans-serif;
           position: relative;
           overflow: hidden;
+          border-top: 1px solid rgba(255, 255, 255, 0.05);
         }
 
-        .footer::before {
-          content: '';
+        .footer-mesh {
           position: absolute;
-          top: 0;
-          left: 0;
-          right: 0;
-          height: 1px;
-          background: linear-gradient(90deg, transparent, #cbd5e0, transparent);
+          top: 0; left: 0; right: 0; bottom: 0;
+          background: radial-gradient(circle at 50% 100%, rgba(37, 99, 235, 0.05) 0%, transparent 50%);
+          z-index: 1;
         }
 
-        .footer-container {
+        .footer-content {
           max-width: 1200px;
           margin: 0 auto;
-          display: flex;
-          align-items: center;
-          justify-content: space-between;
-          gap: 2rem;
+          position: relative;
+          z-index: 2;
         }
 
-        .footer-branding {
-          display: flex;
-          align-items: center;
-          gap: 1rem;
+        .footer-grid {
+          display: grid;
+          grid-template-columns: 1.5fr 1fr 0.8fr;
+          gap: 4rem;
+          margin-bottom: 4rem;
+        }
+
+        .brand-col {
+          max-width: 360px;
         }
 
         .footer-logo {
           display: flex;
           align-items: center;
           gap: 0.75rem;
+          margin-bottom: 1.5rem;
         }
 
-        .logo-icon {
-          font-size: 1.75rem;
-          background: linear-gradient(135deg, #3182ce, #2c5282);
-          -webkit-background-clip: text;
-          -webkit-text-fill-color: transparent;
-          background-clip: text;
-          filter: drop-shadow(0 2px 4px rgba(49, 130, 206, 0.2));
-          animation: pulse 3s ease-in-out infinite;
+        .logo-emoji { font-size: 1.5rem; }
+        .logo-name { 
+          font-size: 1.5rem; 
+          font-weight: 800; 
+          color: white; 
+          letter-spacing: -1px;
         }
 
-        @keyframes pulse {
-          0%, 100% { filter: drop-shadow(0 2px 4px rgba(49, 130, 206, 0.2)); }
-          50% { filter: drop-shadow(0 4px 8px rgba(49, 130, 206, 0.4)); }
+        .footer-description {
+          line-height: 1.6;
+          margin-bottom: 2rem;
+          font-size: 0.95rem;
         }
 
-        .logo-text {
-          font-size: 1.25rem;
+        .footer-socials {
+          display: flex;
+          gap: 1rem;
+        }
+
+        .social-link {
+          width: 40px;
+          height: 40px;
+          background: rgba(255, 255, 255, 0.03);
+          border: 1px solid rgba(255, 255, 255, 0.05);
+          border-radius: 12px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          color: #94a3b8;
+          transition: all 0.3s;
+        }
+
+        .social-link:hover {
+          background: rgba(37, 99, 235, 0.1);
+          border-color: #2563eb;
+          color: white;
+          transform: translateY(-3px);
+        }
+
+        .column-title {
+          color: white;
+          font-size: 1rem;
           font-weight: 700;
-          background: linear-gradient(135deg, #2d3748, #4a5568);
-          -webkit-background-clip: text;
-          -webkit-text-fill-color: transparent;
-          background-clip: text;
-          letter-spacing: -0.025em;
+          margin-bottom: 2rem;
+          text-transform: uppercase;
+          letter-spacing: 1px;
         }
 
-        .footer-tagline {
+        .team-list {
+          display: flex;
+          flex-direction: column;
+          gap: 1.5rem;
+        }
+
+        .team-member {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          background: rgba(255, 255, 255, 0.02);
+          padding: 1rem;
+          border-radius: 16px;
+          border: 1px solid rgba(255, 255, 255, 0.05);
+          transition: all 0.3s;
+        }
+
+        .team-member:hover {
+          background: rgba(255, 255, 255, 0.05);
+          border-color: rgba(255, 255, 255, 0.1);
+          transform: translateX(5px);
+        }
+
+        .member-info {
+          display: flex;
+          flex-direction: column;
+        }
+
+        .member-name {
+          color: white;
+          font-weight: 600;
           font-size: 0.9rem;
-          font-weight: 500;
-          color: #4a5568;
-          margin: 0;
-          white-space: nowrap;
         }
 
-        .footer-contact {
+        .member-role {
+          font-size: 0.75rem;
+          color: #64748b;
+        }
+
+        .member-link {
+          color: #94a3b8;
+          transition: color 0.2s;
+        }
+
+        .member-link:hover {
+          color: #0077b5; /* LinkedIn Blue */
+        }
+
+        .footer-links {
+          list-style: none;
           display: flex;
-          align-items: center;
+          flex-direction: column;
+          gap: 1rem;
         }
 
-        .contact-content {
-          display: flex;
-          align-items: center;
-          gap: 0.5rem;
-          padding: 0.5rem 0.75rem;
-          background: rgba(255, 255, 255, 0.8);
-          border-radius: 10px;
-          border: 1px solid rgba(203, 213, 225, 0.5);
-          backdrop-filter: blur(10px);
-          transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-        }
-
-        .contact-content:hover {
-          background: rgba(255, 255, 255, 0.95);
-          border-color: #3182ce;
-          transform: translateY(-1px);
-          box-shadow: 0 4px 12px rgba(49, 130, 206, 0.15);
-        }
-
-        .contact-icon {
-          color: #3182ce;
-          flex-shrink: 0;
-          transition: transform 0.2s ease;
-        }
-
-        .contact-content:hover .contact-icon {
-          transform: scale(1.1);
-        }
-
-        .contact-email {
-          color: #2d3748;
+        .footer-links a {
+          color: #94a3b8;
           text-decoration: none;
-          font-weight: 500;
-          font-size: 0.85rem;
-          transition: color 0.2s ease;
+          font-size: 0.95rem;
+          transition: all 0.2s;
         }
 
-        .contact-email.hovered {
-          color: #3182ce;
+        .footer-links a:hover {
+          color: white;
+          padding-left: 5px;
         }
 
-        .footer-copyright {
+        .footer-bottom {
+          padding-top: 2rem;
+          border-top: 1px solid rgba(255, 255, 255, 0.05);
           display: flex;
+          justify-content: space-between;
           align-items: center;
-          gap: 0.75rem;
-          font-size: 0.8rem;
-          color: #718096;
-          white-space: nowrap;
+          font-size: 0.85rem;
+          color: #64748b;
         }
 
-        .separator {
-          color: #cbd5e0;
-          font-weight: bold;
+        .heart-icon {
+          color: #ef4444;
+          display: inline;
+          margin: 0 4px;
+          vertical-align: middle;
         }
 
-        /* Tablet and Mobile Styles */
-        @media (max-width: 768px) {
-          .footer-container {
+        @media (max-width: 968px) {
+          .footer-grid {
+            grid-template-columns: 1fr 1fr;
+          }
+          .brand-col {
+            grid-column: span 2;
+            max-width: none;
+            margin-bottom: 2rem;
+          }
+        }
+
+        @media (max-width: 640px) {
+          .footer-grid {
+            grid-template-columns: 1fr;
+            gap: 2.5rem;
+          }
+          .brand-col {
+            grid-column: span 1;
+          }
+          .footer-bottom {
             flex-direction: column;
-            gap: 1.5rem;
+            gap: 1rem;
             text-align: center;
-          }
-
-          .footer-branding {
-            gap: 0.75rem;
-          }
-
-          .footer-tagline {
-            white-space: normal;
-            font-size: 0.85rem;
-          }
-
-          .footer-copyright {
-            order: -1;
-            font-size: 0.75rem;
-          }
-        }
-
-        /* Mobile Styles */
-        @media (max-width: 480px) {
-          .footer {
-            padding: 1.5rem 1rem;
-          }
-
-          .footer-container {
-            gap: 1.25rem;
-          }
-
-          .footer-branding {
-            flex-direction: column;
-            gap: 0.5rem;
-          }
-
-          .footer-logo {
-            gap: 0.5rem;
-          }
-
-          .logo-icon {
-            font-size: 1.5rem;
-          }
-
-          .logo-text {
-            font-size: 1.1rem;
-          }
-
-          .footer-tagline {
-            font-size: 0.8rem;
-          }
-
-          .contact-content {
-            padding: 0.5rem 0.625rem;
-            border-radius: 8px;
-          }
-
-          .contact-email {
-            font-size: 0.8rem;
-          }
-
-          .footer-copyright {
-            flex-direction: column;
-            gap: 0.25rem;
-            font-size: 0.7rem;
-          }
-
-          .separator {
-            display: none;
           }
         }
       `}</style>

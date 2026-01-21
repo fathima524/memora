@@ -1,58 +1,89 @@
 import React, { useState, useEffect } from "react";
 import { supabase } from "../supabase/supabaseClient";
 import { useNavigate } from "react-router-dom";
+import Navbar from "../Reuseable/Navbar";
+import Footer from "../Reuseable/Footer";
+import {
+  LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
+  BarChart, Bar, Cell
+} from 'recharts';
+import {
+  Trophy,
+  Flame,
+  Target,
+  TrendingUp,
+  Activity,
+  Award,
+  Stethoscope,
+  ShieldAlert
+} from 'lucide-react';
 
-function ProfilePage() {
+export default function ProfilePage() {
   const navigate = useNavigate();
   const [user, setUser] = useState(null);
   const [profile, setProfile] = useState({
     full_name: "",
     year_of_study: "",
-    email: ""
+    email: "",
+    current_streak: 0,
+    longest_streak: 0,
+    questions_today: 0,
+    recent_activity: []
   });
+  const [allSubjects, setAllSubjects] = useState([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
 
-  // Fetch user & profile
   useEffect(() => {
     const fetchUserProfile = async () => {
       const { data: { user }, error: userError } = await supabase.auth.getUser();
       if (userError || !user) {
-        console.error(userError);
         navigate("/login");
         return;
       }
-
       setUser(user);
 
-      const { data: profileData, error: profileError } = await supabase
+      const { data: profileData } = await supabase
         .from("profiles")
-        .select("full_name, year_of_study, email")
+        .select("*")
         .eq("id", user.id)
         .single();
-
-      if (profileError) {
-        console.error(profileError);
-      }
 
       setProfile({
         full_name: profileData?.full_name || "",
         year_of_study: profileData?.year_of_study || "",
-        email: profileData?.email || user.email || ""
+        email: profileData?.email || user.email || "",
+        current_streak: profileData?.current_streak || 0,
+        longest_streak: profileData?.longest_streak || 0,
+        questions_today: profileData?.questions_today || 0,
+        recent_activity: profileData?.recent_activity || []
       });
+
+      // Fetch all subjects with total question counts
+      const { data: subData } = await supabase
+        .from("subjects")
+        .select("id, name")
+        .order("name", { ascending: true });
+
+      if (subData) {
+        // Fetch total question count for each subject
+        const subjectsWithCounts = await Promise.all(subData.map(async (s) => {
+          const { count } = await supabase
+            .from("flashcards")
+            .select("*", { count: 'exact', head: true })
+            .eq("subject_id", s.id);
+          return { name: s.name, total_questions: count || 0 };
+        }));
+        setAllSubjects(subjectsWithCounts);
+      }
 
       setLoading(false);
     };
-
     fetchUserProfile();
   }, [navigate]);
 
-  const handleChange = (e) => {
-    const { name, value } = e.target;
-    setProfile((prev) => ({ ...prev, [name]: value }));
-  };
-
-  const handleSave = async () => {
+  const handleSave = async (e) => {
+    e.preventDefault();
     if (!user) return;
     setSaving(true);
 
@@ -66,290 +97,679 @@ function ProfilePage() {
       .eq("id", user.id);
 
     setSaving(false);
-
-    if (error) {
-      console.error(error);
-      alert("Error updating profile. Please try again.");
-      return;
+    if (error) alert("Error updating profile.");
+    else {
+      alert("Profile updated successfully!");
+      navigate("/dashboard");
     }
-    
-    alert("Profile updated successfully!");
-    navigate("/dashboard");
   };
 
-  const handleCancel = () => {
-    navigate("/dashboard");
+  const COLORS = {
+    mastered: '#22c55e',
+    good: '#38bdf8',
+    weak: '#f87171'
   };
 
-  if (loading) {
-    return (
-      <div style={styles.loadingContainer}>
-        <div style={styles.loadingCard}>
-          <div style={styles.loadingText}>Loading profile...</div>
-        </div>
-      </div>
-    );
-  }
+  // Aggregate accuracy by subject for unified visualization
+  const subjectMap = {};
 
-  return (
-    <div style={styles.container}>
-      <div style={styles.profileCard}>
-        <div style={styles.header}>
-          <h1 style={styles.title}>Edit Profile</h1>
-          <div style={styles.badge}>Profile Settings</div>
-        </div>
+  // Initialize map with all subjects (0% mastery)
+  allSubjects.forEach(subObj => {
+    if (subObj.name !== "Mixed Study") {
+      subjectMap[subObj.name] = {
+        name: subObj.name,
+        totalCorrect: 0,
+        totalAttempted: 0,
+        studied: false,
+        total_questions: subObj.total_questions || 1 // Avoid division by zero
+      };
+    }
+  });
 
-        <form style={styles.form}>
-          <div style={styles.formGroup}>
-            <label style={styles.label}>Full Name</label>
-            <input
-              type="text"
-              name="full_name"
-              value={profile.full_name}
-              onChange={handleChange}
-              style={styles.input}
-              placeholder="Enter your full name"
-            />
-          </div>
+  // Overlay actual performance from recent activity
+  profile.recent_activity.forEach(act => {
+    if (act.subject !== "Mixed Study" && subjectMap[act.subject]) {
+      const qCount = act.questions || 0;
+      const acc = act.accuracy || 0;
+      subjectMap[act.subject].totalAttempted += qCount;
+      subjectMap[act.subject].totalCorrect += (acc / 100) * qCount;
+      subjectMap[act.subject].studied = true;
+    }
+  });
 
-          <div style={styles.formGroup}>
-            <label style={styles.label}>Year of Study</label>
-            <input
-              type="text"
-              name="year_of_study"
-              value={profile.year_of_study}
-              onChange={handleChange}
-              style={styles.input}
-              placeholder="e.g., 1st Year, 2nd Year, Graduate"
-            />
-          </div>
+  const barData = Object.values(subjectMap).map(s => {
+    // Calculate raw accuracy from all attempts
+    const rawAccuracy = s.totalAttempted > 0 ? (s.totalCorrect / s.totalAttempted) * 100 : 0;
 
-          <div style={styles.formGroup}>
-            <label style={styles.label}>Email Address</label>
-            <input
-              type="email"
-              name="email"
-              value={profile.email}
-              onChange={handleChange}
-              style={styles.input}
-              placeholder="Enter your email address"
-            />
-          </div>
+    // Calculate mastery based on coverage of total questions in the subject
+    const coverageFactor = Math.min(s.totalAttempted / s.total_questions, 1);
+    const accuracy = Math.round(rawAccuracy * coverageFactor);
 
-          <div style={styles.buttonGroup}>
-            <button
-              type="button"
-              onClick={handleSave}
-              disabled={saving}
-              style={{
-                ...styles.button,
-                ...(saving ? styles.buttonDisabled : {}),
-                ...styles.primaryButton
-              }}
-            >
-              {saving ? "Saving..." : "Save Changes"}
-            </button>
-            
-            <button
-              type="button"
-              onClick={handleCancel}
-              style={{...styles.button, ...styles.secondaryButton}}
-            >
-              Cancel
-            </button>
-          </div>
-        </form>
+    let status = 'weak';
 
-        <div style={styles.info}>
-          Your profile information helps personalize your study experience
-        </div>
-      </div>
+    if (!s.studied) status = 'weak'; // Not studied yet = focus area
+    else if (accuracy >= 85) status = 'mastered';
+    else if (accuracy >= 60) status = 'good';
+
+    return {
+      name: s.name,
+      accuracy,
+      status,
+      fill: s.studied ? COLORS[status] : 'rgba(255,255,255,0.05)'
+    };
+  }).sort((a, b) => b.accuracy - a.accuracy);
+
+  const weakSubjects = barData
+    .filter(d => d.status === 'weak' || d.accuracy < 60)
+    .sort((a, b) => a.accuracy - b.accuracy)
+    .slice(0, 3);
+
+  const strongSubjects = barData
+    .filter(d => d.status === 'mastered')
+    .slice(0, 3);
+
+  if (loading) return (
+    <div className="profile-loading">
+      <div className="loader"></div>
+      <style>{`.profile-loading { height: 100vh; display: flex; align-items: center; justify-content: center; background: #0f172a; color: white; } .loader { width: 40px; height: 40px; border: 3px solid rgba(255,255,255,0.1); border-top-color: #38bdf8; border-radius: 50%; animation: spin 1s linear infinite; } @keyframes spin { to { transform: rotate(360deg); } }`}</style>
     </div>
   );
+
+  return (
+    <div className="profile-page">
+      <div className="auth-mesh"></div>
+      <Navbar />
+
+      <main className="profile-main">
+        <div className="profile-header">
+          <div className="header-title-row">
+            <h1>Account Settings</h1>
+            <div className="medical-id-tag">
+              <Stethoscope size={16} />
+              <span>Medical ID: Profile used to curate high-yield content for your clinical stage</span>
+            </div>
+          </div>
+          <p>Manage your academic details and track your professional learning progress.</p>
+        </div>
+
+        <div className="profile-layout-single">
+          {/* Settings and Analytics */}
+          <div className="profile-content-area">
+            {/* Visual Analytics */}
+            <div className="unified-analytics-container">
+              <div className="chart-container glass-panel-v2">
+                <div className="chart-header">
+                  <div className="chart-title-group">
+                    <TrendingUp size={18} className="text-blue" />
+                    <h3>Unified Subject Performance</h3>
+                  </div>
+                  <p>Comprehensive accuracy mapping across your entire medical curriculum.</p>
+                </div>
+
+                <div className="analytics-layout-grid">
+                  <div className="chart-box-horizontal">
+                    <ResponsiveContainer width="100%" height={400}>
+                      <BarChart data={barData} layout="horizontal" margin={{ top: 20, right: 30, left: 0, bottom: 100 }}>
+                        <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" vertical={false} />
+                        <XAxis
+                          dataKey="name"
+                          stroke="#94a3b8"
+                          fontSize={11}
+                          tick={{ fill: '#94a3b8' }}
+                          tickLine={false}
+                          axisLine={false}
+                          angle={-45}
+                          textAnchor="end"
+                          interval={0}
+                        />
+                        <YAxis
+                          stroke="#64748b"
+                          fontSize={10}
+                          tickLine={false}
+                          axisLine={false}
+                          domain={[0, 100]}
+                          tickFormatter={(v) => `${v}%`}
+                        />
+                        <Tooltip
+                          cursor={{ fill: 'rgba(255,255,255,0.02)' }}
+                          contentStyle={{
+                            background: 'rgba(15, 23, 42, 0.95)',
+                            border: '1px solid rgba(255,255,255,0.1)',
+                            borderRadius: '16px',
+                            padding: '12px',
+                            color: '#ffffff'
+                          }}
+                          labelStyle={{
+                            color: '#ffffff',
+                            fontWeight: '600'
+                          }}
+                          itemStyle={{
+                            color: '#ffffff'
+                          }}
+                        />
+                        <Bar dataKey="accuracy" radius={[8, 8, 0, 0]} barSize={28}>
+                          {barData.map((entry, index) => (
+                            <Cell key={`cell-${index}`} fill={entry.fill} />
+                          ))}
+                        </Bar>
+                      </BarChart>
+                    </ResponsiveContainer>
+                  </div>
+
+                  <div className="strategic-insights">
+                    <div className="insight-card focus">
+                      <header>
+                        <ShieldAlert size={16} />
+                        <h4>Priority Focus Required</h4>
+                      </header>
+                      <p>You should solve more questions in these areas to improve clinical proficiency:</p>
+                      <div className="subject-list-v2">
+                        {weakSubjects.length > 0 ? weakSubjects.map(s => (
+                          <div key={s.name} className="subject-pill weak">
+                            <span>{s.name}</span>
+                            <span className="acc-val">{s.accuracy}%</span>
+                          </div>
+                        )) : <div className="no-data">All subjects are currently in good standing.</div>}
+                      </div>
+                    </div>
+
+                    <div className="insight-card strength">
+                      <header>
+                        <Award size={16} />
+                        <h4>Current Strengths</h4>
+                      </header>
+                      <p>You have demonstrated high mastery in these subjects:</p>
+                      <div className="subject-list-v2">
+                        {strongSubjects.length > 0 ? strongSubjects.map(s => (
+                          <div key={s.name} className="subject-pill strong">
+                            <span>{s.name}</span>
+                            <span className="acc-val">{s.accuracy}%</span>
+                          </div>
+                        )) : <div className="no-data">Keep studying to reach mastery levels.</div>}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div className="settings-panel glass-panel">
+              <form onSubmit={handleSave}>
+                <div className="form-section">
+                  <h3 className="section-title">Personal Information</h3>
+                  <div className="input-group">
+                    <label>Full Name</label>
+                    <input
+                      type="text"
+                      value={profile.full_name}
+                      onChange={e => setProfile({ ...profile, full_name: e.target.value })}
+                      placeholder="Doctor Name"
+                    />
+                  </div>
+                  <div className="input-group">
+                    <label>Email Address</label>
+                    <div className="input-wrapper disabled">
+                      <input
+                        type="email"
+                        value={profile.email}
+                        disabled
+                        className="disabled-input"
+                      />
+                      <span className="input-hint">Email cannot be changed</span>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="form-section">
+                  <h3 className="section-title">Academic Details</h3>
+                  <div className="input-group">
+                    <label>Year of Study</label>
+                    <select
+                      value={profile.year_of_study}
+                      onChange={e => setProfile({ ...profile, year_of_study: e.target.value })}
+                      className="premium-select"
+                    >
+                      <option value="">Select Year</option>
+                      <option value="1st Year">1st Year MBBS</option>
+                      <option value="2nd Year">2nd Year MBBS</option>
+                      <option value="3rd Year">3rd Year MBBS</option>
+                      <option value="Final Year">Final Year MBBS</option>
+                      <option value="Intern">Intern / Junior Doctor</option>
+                      <option value="Post-Grad">Post-Graduate</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div className="form-actions">
+                  <button type="button" onClick={() => navigate("/dashboard")} className="btn-cancel">Cancel</button>
+                  <button type="submit" className="btn-save" disabled={saving}>
+                    {saving ? <div className="spinner"></div> : "Save Changes"}
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        </div>
+      </main>
+
+      <Footer />
+
+      <style>{`
+        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
+
+        .profile-page {
+          min-height: 100vh;
+          background: #0f172a;
+          color: white;
+          font-family: 'Plus Jakarta Sans', sans-serif;
+          position: relative;
+          overflow-x: hidden;
+        }
+
+        .auth-mesh {
+          position: absolute;
+          top: 0; left: 0; right: 0; bottom: 0;
+          background: 
+            radial-gradient(circle at 100% 0%, rgba(37, 99, 235, 0.1) 0%, transparent 40%),
+            radial-gradient(circle at 0% 100%, rgba(56, 189, 248, 0.05) 0%, transparent 40%);
+          z-index: 0;
+          pointer-events: none;
+        }
+
+        .profile-main {
+          max-width: 1000px;
+          margin: 0 auto;
+          padding: 140px 2rem 6rem;
+          position: relative;
+          z-index: 1;
+        }
+
+        .profile-header {
+          margin-bottom: 3.5rem;
+        }
+
+        .profile-header h1 {
+          font-size: 2.75rem;
+          font-weight: 800;
+          letter-spacing: -1.5px;
+          margin-bottom: 0.75rem;
+        }
+
+        .profile-header p {
+          color: #94a3b8;
+          font-size: 1.125rem;
+        }
+
+        .profile-layout-single {
+          width: 100%;
+          position: relative;
+          z-index: 1;
+        }
+
+        .header-title-row {
+          display: flex;
+          align-items: center;
+          gap: 2rem;
+          margin-bottom: 0.5rem;
+          flex-wrap: wrap;
+        }
+
+        .medical-id-tag {
+          display: flex;
+          align-items: center;
+          gap: 0.75rem;
+          background: rgba(56, 189, 248, 0.1);
+          border: 1px solid rgba(56, 189, 248, 0.2);
+          padding: 0.5rem 1rem;
+          border-radius: 99px;
+          color: #38bdf8;
+          font-size: 0.8rem;
+          font-weight: 700;
+        }
+
+        .analytics-section-full {
+          display: grid;
+          grid-template-columns: 1.2fr 1fr;
+          gap: 1.5rem;
+          margin-bottom: 2.5rem;
+        }
+
+        .analytics-layout-grid {
+          display: flex;
+          flex-direction: column;
+          gap: 2rem;
+          align-items: stretch;
+        }
+
+        .chart-box-horizontal {
+          width: 100%;
+          background: rgba(15, 23, 42, 0.2);
+          border-radius: 20px;
+          padding: 1rem;
+          margin-bottom: 2rem;
+        }
+
+        .strategic-insights {
+          display: grid;
+          grid-template-columns: 1fr 1fr;
+          gap: 1.5rem;
+        }
+
+        @media (max-width: 800px) {
+          .strategic-insights {
+            grid-template-columns: 1fr;
+          }
+        }
+
+        .strategic-insights {
+          display: flex;
+          flex-direction: column;
+          gap: 1.5rem;
+        }
+
+        .insight-card {
+          padding: 1.5rem;
+          border-radius: 20px;
+          background: rgba(255,255,255,0.02);
+          border: 1px solid rgba(255,255,255,0.05);
+        }
+
+        .insight-card.focus { border-left: 4px solid #f87171; }
+        .insight-card.strength { border-left: 4px solid #22c55e; }
+
+        .insight-card header {
+          display: flex;
+          align-items: center;
+          gap: 0.75rem;
+          margin-bottom: 0.75rem;
+        }
+
+        .insight-card h4 {
+          font-size: 0.85rem;
+          font-weight: 800;
+          text-transform: uppercase;
+          letter-spacing: 0.5px;
+          margin: 0;
+        }
+
+        .insight-card.focus h4 { color: #f87171; }
+        .insight-card.strength h4 { color: #22c55e; }
+
+        .insight-card p {
+          font-size: 0.85rem;
+          color: #94a3b8;
+          margin-bottom: 1.25rem;
+          line-height: 1.5;
+        }
+
+        .subject-list-v2 {
+          display: flex;
+          flex-direction: column;
+          gap: 0.75rem;
+        }
+
+        .subject-pill {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          padding: 0.75rem 1rem;
+          border-radius: 12px;
+          font-size: 0.9rem;
+          font-weight: 700;
+          background: rgba(255,255,255,0.03);
+        }
+
+        .subject-pill.weak { background: rgba(248, 113, 113, 0.05); color: #fecaca; }
+        .subject-pill.strong { background: rgba(34, 197, 94, 0.05); color: #bbf7d0; }
+
+        .acc-val { font-family: monospace; font-size: 1rem; }
+
+        .no-data {
+          font-size: 0.8rem;
+          color: #64748b;
+          font-style: italic;
+          text-align: center;
+          padding: 1rem;
+        }
+
+        .stats-row {
+          display: grid;
+          grid-template-columns: repeat(3, 1fr);
+          gap: 1.5rem;
+          margin-bottom: 2.5rem;
+        }
+
+        .stat-card-premium {
+          background: rgba(255, 255, 255, 0.03);
+          border: 1px solid rgba(255, 255, 255, 0.08);
+          border-radius: 24px;
+          padding: 1.5rem;
+          display: flex;
+          align-items: center;
+          gap: 1.25rem;
+          transition: 0.3s;
+        }
+
+        .stat-card-premium:hover {
+          background: rgba(255, 255, 255, 0.05);
+          transform: translateY(-4px);
+          border-color: rgba(255, 255, 255, 0.15);
+        }
+
+        .stat-icon {
+          width: 48px; height: 48px;
+          border-radius: 14px;
+          display: flex; align-items: center; justify-content: center;
+        }
+        .stat-icon.orange { background: rgba(249, 115, 22, 0.1); color: #f97316; }
+        .stat-icon.blue { background: rgba(56, 189, 248, 0.1); color: #38bdf8; }
+        .stat-icon.yellow { background: rgba(234, 179, 8, 0.1); color: #eab308; }
+
+        .stat-info-v2 { display: flex; flex-direction: column; }
+        .stat-v { font-size: 1.5rem; font-weight: 800; color: white; line-height: 1; }
+        .stat-l { font-size: 0.7rem; color: #94a3b8; font-weight: 700; text-transform: uppercase; margin-top: 4px; letter-spacing: 0.5px; }
+
+        .analytics-section {
+          display: grid;
+          grid-template-columns: 1fr 1fr;
+          gap: 1.5rem;
+          margin-bottom: 2.5rem;
+        }
+
+        .glass-panel-v2 {
+          background: rgba(30, 41, 59, 0.4);
+          backdrop-filter: blur(20px);
+          border: 1px solid rgba(255, 255, 255, 0.08);
+          border-radius: 24px;
+          padding: 2rem;
+        }
+
+        .chart-header { margin-bottom: 2rem; }
+        .chart-title-group { display: flex; align-items: center; gap: 0.75rem; margin-bottom: 0.5rem; }
+        .chart-title-group h3 { font-size: 0.9rem; font-weight: 800; text-transform: uppercase; letter-spacing: 1px; color: #f1f5f9; margin: 0; }
+        .chart-header p { font-size: 0.8rem; color: #64748b; margin: 0; }
+
+        .text-blue { color: #38bdf8; }
+        .text-indigo { color: #818cf8; }
+
+        .glass-panel {
+          background: rgba(30, 41, 59, 0.5);
+          backdrop-filter: blur(20px);
+          border: 1px solid rgba(255, 255, 255, 0.1);
+          border-radius: 32px;
+          padding: 3rem;
+          box-shadow: 0 40px 100px -20px rgba(0, 0, 0, 0.3);
+        }
+
+        .section-title {
+          font-size: 0.9rem;
+          text-transform: uppercase;
+          letter-spacing: 2px;
+          color: #38bdf8;
+          margin-bottom: 2rem;
+          font-weight: 800;
+        }
+
+        .form-section {
+          margin-bottom: 3.5rem;
+        }
+
+        .input-group {
+          display: flex;
+          flex-direction: column;
+          gap: 0.75rem;
+          margin-bottom: 2rem;
+        }
+
+        .input-group label {
+          font-size: 0.875rem;
+          font-weight: 700;
+          color: #cbd5e1;
+        }
+
+        .input-group input, .premium-select {
+          padding: 1.125rem 1.25rem;
+          background: rgba(15, 23, 42, 0.6);
+          border: 1px solid rgba(255, 255, 255, 0.1);
+          border-radius: 16px;
+          color: white;
+          font-family: inherit;
+          font-size: 1rem;
+          outline: none;
+          transition: all 0.3s;
+        }
+
+        .input-group input:focus, .premium-select:focus {
+          border-color: #2563eb;
+          background: rgba(15, 23, 42, 0.8);
+          box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.1);
+        }
+
+        .disabled-input {
+          opacity: 0.5;
+          cursor: not-allowed;
+        }
+
+        .input-hint {
+          font-size: 0.75rem;
+          color: #64748b;
+          margin-top: 0.5rem;
+          display: block;
+        }
+
+        .form-actions {
+          display: flex;
+          justify-content: flex-end;
+          gap: 1.25rem;
+          padding-top: 2.5rem;
+          border-top: 1px solid rgba(255,255,255,0.05);
+        }
+
+        .btn-cancel {
+          padding: 1rem 2rem;
+          background: transparent;
+          border: 1px solid rgba(255,255,255,0.1);
+          color: #94a3b8;
+          border-radius: 14px;
+          font-weight: 700;
+          cursor: pointer;
+          transition: 0.2s;
+        }
+
+        .btn-cancel:hover { background: rgba(255,255,255,0.05); color: white; }
+
+        .btn-save {
+          padding: 1rem 2.5rem;
+          background: #2563eb;
+          color: white;
+          border: none;
+          border-radius: 14px;
+          font-weight: 800;
+          cursor: pointer;
+          transition: all 0.3s;
+          box-shadow: 0 10px 15px -3px rgba(37, 99, 235, 0.3);
+        }
+
+        .btn-save:hover {
+          background: #1d4ed8;
+          transform: translateY(-2px);
+          box-shadow: 0 20px 25px -5px rgba(37, 99, 235, 0.4);
+        }
+
+        .stats-sidebar {
+          display: flex;
+          flex-direction: column;
+          gap: 1.5rem;
+        }
+
+        .sidebar-card {
+          padding: 2.5rem;
+          text-align: center;
+        }
+
+        .profile-avatar-box {
+          width: 72px; height: 72px;
+          background: rgba(56, 189, 248, 0.1);
+          border: 1px solid rgba(56, 189, 248, 0.2);
+          border-radius: 24px;
+          display: flex; align-items: center; justify-content: center;
+          font-size: 2rem;
+          margin: 0 auto 1.5rem;
+        }
+
+        .sidebar-card h3 { font-size: 1.25rem; font-weight: 800; margin-bottom: 0.75rem; }
+        .sidebar-card p { font-size: 0.95rem; color: #94a3b8; line-height: 1.6; }
+
+        .sidebar-card.premium {
+          background: linear-gradient(135deg, rgba(30, 41, 59, 1) 0%, rgba(15, 23, 42, 1) 100%);
+          border: 1px solid #334155;
+        }
+
+        .premium-badge {
+          background: #fbbf24;
+          color: #78350f;
+          padding: 0.4rem 0.75rem;
+          border-radius: 8px;
+          font-size: 0.7rem;
+          font-weight: 900;
+          display: inline-block;
+          margin-bottom: 1.5rem;
+        }
+
+        .btn-upgrade-glow {
+          width: 100%;
+          margin-top: 1.75rem;
+          padding: 1rem;
+          background: #38bdf8;
+          color: #0f172a;
+          border: none;
+          border-radius: 12px;
+          font-weight: 800;
+          cursor: pointer;
+          transition: all 0.3s;
+          box-shadow: 0 0 20px rgba(56, 189, 248, 0.2);
+        }
+
+        .btn-upgrade-glow:hover {
+          transform: translateY(-2px);
+          box-shadow: 0 10px 30px rgba(56, 189, 248, 0.4);
+        }
+
+        .spinner {
+          width: 20px; height: 20px;
+          border: 3px solid rgba(255,255,255,0.3);
+          border-top-color: white;
+          border-radius: 50%;
+          animation: spin 0.8s linear infinite;
+        }
+
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        @media (max-width: 900px) {
+          .profile-grid { grid-template-columns: 1fr; }
+          .stats-sidebar { order: -1; }
+        }
+      `}</style>
+    </div >
+  );
 }
-
-// STYLES SECTION - Responsive with no white corners and smaller container
-const styles = {
-  container: {
-    minHeight: '100vh',
-    minWidth: '100vw',
-    width: '100%',
-    height: '100%',
-    background: 'linear-gradient(135deg, #27374d 0%, #526d82 40%, #9db2bf 70%, #dde6ed 100%)',
-    padding: '0',
-    margin: '0',
-    display: 'flex',
-    flexDirection: 'column',
-    alignItems: 'center',
-    justifyContent: 'center',
-    fontFamily: "'Inter', 'Segoe UI', sans-serif",
-    position: 'fixed',
-    top: '0',
-    left: '0',
-    right: '0',
-    bottom: '0'
-  },
-
-  profileCard: {
-    background: 'rgba(255, 255, 255, 0.95)',
-    backdropFilter: 'blur(15px)',
-    borderRadius: '20px',
-    padding: window.innerWidth <= 480 ? '1.5rem' : window.innerWidth <= 768 ? '2rem' : '2.5rem',
-    maxWidth: window.innerWidth <= 480 ? '320px' : window.innerWidth <= 768 ? '400px' : '480px',
-    width: window.innerWidth <= 480 ? '90%' : window.innerWidth <= 768 ? '85%' : '100%',
-    boxShadow: '0 20px 40px rgba(39, 55, 77, 0.3)',
-    border: '1px solid rgba(255, 255, 255, 0.3)',
-    position: 'relative',
-    margin: '1rem'
-  },
-
-  header: {
-    display: 'flex',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: window.innerWidth <= 480 ? '1.5rem' : '2rem',
-    flexWrap: 'wrap',
-    gap: '0.8rem'
-  },
-
-  title: {
-    fontSize: window.innerWidth <= 480 ? '1.4rem' : window.innerWidth <= 768 ? '1.6rem' : '1.8rem',
-    fontWeight: '700',
-    color: '#27374d',
-    margin: 0,
-    background: 'linear-gradient(135deg, #27374d 0%, #526d82 100%)',
-    WebkitBackgroundClip: 'text',
-    WebkitTextFillColor: 'transparent',
-    backgroundClip: 'text'
-  },
-
-  badge: {
-    background: 'linear-gradient(135deg, #27374d 0%, #526d82 100%)',
-    color: 'white',
-    padding: window.innerWidth <= 480 ? '0.4rem 0.8rem' : '0.5rem 1rem',
-    borderRadius: '16px',
-    fontSize: window.innerWidth <= 480 ? '0.7rem' : '0.75rem',
-    fontWeight: '600',
-    textTransform: 'uppercase',
-    boxShadow: '0 4px 15px rgba(39, 55, 77, 0.3)',
-    whiteSpace: 'nowrap'
-  },
-
-  form: {
-    display: 'flex',
-    flexDirection: 'column',
-    gap: window.innerWidth <= 480 ? '1rem' : '1.2rem'
-  },
-
-  formGroup: {
-    display: 'flex',
-    flexDirection: 'column',
-    gap: '0.4rem'
-  },
-
-  label: {
-    fontSize: window.innerWidth <= 480 ? '0.85rem' : '0.9rem',
-    fontWeight: '600',
-    color: '#27374d',
-    marginBottom: '0.3rem'
-  },
-
-  input: {
-    padding: window.innerWidth <= 480 ? '0.8rem' : '0.9rem',
-    border: '2px solid #dde6ed',
-    borderRadius: '10px',
-    fontSize: window.innerWidth <= 480 ? '0.85rem' : '0.9rem',
-    fontFamily: 'inherit',
-    background: 'rgba(255, 255, 255, 0.8)',
-    transition: 'all 0.3s ease',
-    outline: 'none',
-    color: '#27374d',
-    width: '100%',
-    boxSizing: 'border-box'
-  },
-
-  buttonGroup: {
-    display: 'flex',
-    gap: window.innerWidth <= 480 ? '0.8rem' : '1rem',
-    justifyContent: 'center',
-    flexWrap: 'wrap',
-    marginTop: window.innerWidth <= 480 ? '0.8rem' : '1rem'
-  },
-
-  button: {
-    padding: window.innerWidth <= 480 ? '0.8rem 1.5rem' : '0.9rem 1.8rem',
-    border: 'none',
-    borderRadius: '10px',
-    fontSize: window.innerWidth <= 480 ? '0.85rem' : '0.9rem',
-    fontWeight: '600',
-    cursor: 'pointer',
-    transition: 'all 0.3s ease',
-    minWidth: window.innerWidth <= 480 ? '120px' : '130px',
-    flexShrink: 0
-  },
-
-  primaryButton: {
-    background: 'linear-gradient(135deg, #27374d 0%, #526d82 100%)',
-    color: 'white',
-    boxShadow: '0 4px 15px rgba(39, 55, 77, 0.3)'
-  },
-
-  secondaryButton: {
-    background: 'rgba(157, 178, 191, 0.3)',
-    color: '#27374d',
-    border: '2px solid #9db2bf'
-  },
-
-  buttonDisabled: {
-    opacity: 0.6,
-    cursor: 'not-allowed'
-  },
-
-  info: {
-    marginTop: window.innerWidth <= 480 ? '1.2rem' : '1.5rem',
-    padding: window.innerWidth <= 480 ? '0.8rem' : '1rem',
-    background: 'rgba(52, 152, 219, 0.1)',
-    borderRadius: '10px',
-    textAlign: 'center',
-    fontSize: window.innerWidth <= 480 ? '0.8rem' : '0.85rem',
-    color: '#2980b9',
-    fontStyle: 'italic',
-    lineHeight: '1.4'
-  },
-
-  loadingContainer: {
-    minHeight: '100vh',
-    minWidth: '100vw',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    background: 'linear-gradient(135deg, #27374d 0%, #526d82 40%, #9db2bf 70%, #dde6ed 100%)',
-    fontFamily: "'Inter', 'Segoe UI', sans-serif",
-    position: 'fixed',
-    top: '0',
-    left: '0',
-    right: '0',
-    bottom: '0',
-    margin: '0',
-    padding: '0'
-  },
-
-  loadingCard: {
-    background: 'rgba(255, 255, 255, 0.95)',
-    backdropFilter: 'blur(15px)',
-    borderRadius: '20px',
-    padding: window.innerWidth <= 480 ? '2rem' : '2.5rem',
-    boxShadow: '0 20px 40px rgba(39, 55, 77, 0.3)',
-    border: '1px solid rgba(255, 255, 255, 0.3)',
-    margin: '1rem'
-  },
-
-  loadingText: {
-    fontSize: window.innerWidth <= 480 ? '1rem' : '1.1rem',
-    color: '#27374d',
-    textAlign: 'center',
-    fontWeight: '600'
-  }
-};
-
-export default ProfilePage;

@@ -44,55 +44,81 @@ const ActiveUsers = () => {
 
   const styles = {
     container: {
+      minHeight: '100vh',
+      backgroundColor: '#060912', // Dark background
+      color: 'white',
+      fontFamily: '"Plus Jakarta Sans", sans-serif',
+      padding: '40px 20px',
+      position: 'relative',
+      overflow: 'hidden'
+    },
+    authMesh: {
+      position: 'absolute',
+      top: 0, left: 0, right: 0, bottom: 0,
+      background: `
+        radial-gradient(circle at 10% 10%, rgba(37, 99, 235, 0.1) 0%, transparent 40%),
+        radial-gradient(circle at 90% 90%, rgba(56, 189, 248, 0.08) 0%, transparent 40%),
+        radial-gradient(circle at 50% 50%, rgba(99, 102, 241, 0.02) 0%, transparent 60%)
+      `,
+      zIndex: 0,
+      pointerEvents: 'none'
+    },
+    contentWrapper: {
+      position: 'relative',
+      zIndex: 1,
       maxWidth: '896px',
-      margin: '0 auto',
-      padding: '16px'
+      margin: '0 auto'
     },
     card: {
-      backgroundColor: 'white',
-      borderRadius: '8px',
-      boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05)',
-      border: '1px solid #e5e7eb',
+      // Beige glass effect
+      background: 'linear-gradient(145deg, rgba(245, 235, 215, 0.18) 0%, rgba(245, 235, 215, 0.08) 100%)',
+      backdropFilter: 'blur(20px)',
+      borderRadius: '24px',
+      border: '1px solid rgba(245, 235, 215, 0.25)',
+      boxShadow: '0 20px 40px rgba(0, 0, 0, 0.4)',
       overflow: 'hidden'
     },
     header: {
-      background: 'linear-gradient(90deg, #f9fafb 0%, white 100%)',
-      borderBottom: '1px solid #e5e7eb',
-      padding: '24px'
+      background: 'rgba(255, 255, 255, 0.03)',
+      borderBottom: '1px solid rgba(245, 235, 215, 0.15)',
+      padding: '32px'
     },
     title: {
-      fontSize: '24px',
-      fontWeight: 'bold',
-      color: '#111827',
-      margin: '0 0 8px 0'
+      fontSize: '28px',
+      fontWeight: '800',
+      color: '#fdfaf6', // Off-white text
+      margin: '0 0 8px 0',
+      letterSpacing: '-1px'
     },
     subtitle: {
-      color: '#6b7280',
-      margin: '0 0 16px 0',
-      fontSize: '14px'
+      color: '#94a3b8',
+      margin: '0 0 24px 0',
+      fontSize: '16px'
     },
     statsContainer: {
       display: 'flex',
       gap: '12px'
     },
     totalBadge: {
-      backgroundColor: '#dbeafe',
-      color: '#1e40af',
-      padding: '4px 12px',
+      backgroundColor: 'rgba(56, 189, 248, 0.1)',
+      color: '#38bdf8',
+      border: '1px solid rgba(56, 189, 248, 0.2)',
+      padding: '6px 16px',
       borderRadius: '9999px',
       fontSize: '14px',
-      fontWeight: '500'
+      fontWeight: '600'
     },
     onlineBadge: {
-      backgroundColor: '#dcfce7',
-      color: '#166534',
-      padding: '4px 12px',
+      backgroundColor: 'rgba(34, 197, 94, 0.1)',
+      color: '#4ade80',
+      border: '1px solid rgba(34, 197, 94, 0.2)',
+      padding: '6px 16px',
       borderRadius: '9999px',
       fontSize: '14px',
-      fontWeight: '500'
+      fontWeight: '600'
     },
     userList: {
-      padding: '24px'
+      padding: '32px'
     },
     userListContainer: {
       display: 'flex',
@@ -103,16 +129,12 @@ const ActiveUsers = () => {
       display: 'flex',
       alignItems: 'center',
       justifyContent: 'space-between',
-      padding: '16px',
-      backgroundColor: '#f9fafb',
-      borderRadius: '8px',
+      padding: '20px',
+      backgroundColor: 'rgba(255, 255, 255, 0.03)',
+      borderRadius: '16px',
       transition: 'all 0.2s ease',
       cursor: 'pointer',
-      border: '1px solid #f3f4f6'
-    },
-    userItemHover: {
-      backgroundColor: '#f3f4f6',
-      borderColor: '#e5e7eb'
+      border: '1px solid rgba(255, 255, 255, 0.05)'
     },
     userInfo: {
       display: 'flex',
@@ -121,16 +143,17 @@ const ActiveUsers = () => {
     },
     userDetails: {
       display: 'flex',
-      flexDirection: 'column'
+      flexDirection: 'column',
+      gap: '4px'
     },
     userName: {
       fontWeight: '600',
-      color: '#111827',
+      color: 'white',
       fontSize: '18px',
       margin: 0
     },
     lastSeen: {
-      color: '#6b7280',
+      color: '#94a3b8',
       fontSize: '14px',
       margin: 0
     },
@@ -140,145 +163,160 @@ const ActiveUsers = () => {
       gap: '8px'
     },
     statusDot: {
-      width: '12px',
-      height: '12px',
-      borderRadius: '50%'
+      width: '8px',
+      height: '8px',
+      borderRadius: '50%',
+      boxShadow: '0 0 10px currentColor'
     },
     onlineDot: {
-      backgroundColor: '#10b981'
+      backgroundColor: '#4ade80',
+      color: '#4ade80'
     },
     offlineDot: {
-      backgroundColor: '#ef4444'
+      backgroundColor: '#f87171',
+      color: '#f87171'
     },
     onlineStatus: {
-      backgroundColor: '#dcfce7',
-      color: '#166534',
+      backgroundColor: 'rgba(34, 197, 94, 0.1)',
+      color: '#4ade80',
       padding: '4px 12px',
       borderRadius: '9999px',
-      fontSize: '14px',
-      fontWeight: '500'
+      fontSize: '12px',
+      fontWeight: '600',
+      border: '1px solid rgba(34, 197, 94, 0.2)'
     },
     offlineStatus: {
-      backgroundColor: '#fee2e2',
-      color: '#991b1b',
+      backgroundColor: 'rgba(248, 113, 113, 0.1)',
+      color: '#f87171',
       padding: '4px 12px',
       borderRadius: '9999px',
-      fontSize: '14px',
-      fontWeight: '500'
+      fontSize: '12px',
+      fontWeight: '600',
+      border: '1px solid rgba(248, 113, 113, 0.2)'
     },
     footer: {
-      padding: '24px',
-      backgroundColor: '#f9fafb',
-      borderTop: '1px solid #e5e7eb'
+      padding: '24px 32px',
+      backgroundColor: 'rgba(0, 0, 0, 0.2)',
+      borderTop: '1px solid rgba(245, 235, 215, 0.15)',
+      display: 'flex',
+      justifyContent: 'center'
     },
     backButton: {
-      backgroundColor: '#1f2937',
-      color: 'white',
+      backgroundColor: 'rgba(255, 255, 255, 0.05)',
+      color: '#94a3b8',
       padding: '12px 24px',
-      borderRadius: '8px',
-      boxShadow: '0 1px 2px 0 rgba(0, 0, 0, 0.05)',
+      borderRadius: '12px',
+      border: '1px solid rgba(255, 255, 255, 0.1)',
       transition: 'all 0.2s ease',
       display: 'inline-flex',
       alignItems: 'center',
       gap: '8px',
-      fontWeight: '500',
+      fontWeight: '600',
       textDecoration: 'none',
-      border: 'none',
+      fontSize: '0.9rem',
       cursor: 'pointer'
-    },
-    backButtonHover: {
-      backgroundColor: '#111827',
-      boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)'
     },
     emptyState: {
       textAlign: 'center',
-      padding: '32px 16px',
-      color: '#6b7280'
+      padding: '48px 16px',
+      color: '#94a3b8',
+      fontStyle: 'italic'
     }
   };
 
   return (
     <div style={styles.container}>
-      <div style={styles.card}>
-        {/* Header */}
-        <div style={styles.header}>
-          <h2 style={styles.title}>Active Users</h2>
-          <p style={styles.subtitle}>Currently active members</p>
+      {/* Background Mesh */}
+      <div style={styles.authMesh}></div>
 
-          <div style={styles.statsContainer}>
-            <span style={styles.totalBadge}>
-              Total: {users.length}
-            </span>
-            <span style={styles.onlineBadge}>
-              Online: {onlineUsers.length}
-            </span>
+      <div style={styles.contentWrapper}>
+        <div style={styles.card}>
+          {/* Header */}
+          <div style={styles.header}>
+            <h2 style={styles.title}>Active Users</h2>
+            <p style={styles.subtitle}>Currently active members in the system</p>
+
+            <div style={styles.statsContainer}>
+              <span style={styles.totalBadge}>
+                Total: {users.length}
+              </span>
+              <span style={styles.onlineBadge}>
+                Online: {onlineUsers.length}
+              </span>
+            </div>
           </div>
-        </div>
 
-        {/* User List */}
-        <div style={styles.userList}>
-          {users.length > 0 ? (
-            <div style={styles.userListContainer}>
-              {users.map((user) => {
-                const status = isActive(user.last_seen) ? "online" : "offline";
+          {/* User List */}
+          <div style={styles.userList}>
+            {users.length > 0 ? (
+              <div style={styles.userListContainer}>
+                {users.map((user) => {
+                  const status = isActive(user.last_seen) ? "online" : "offline";
 
-                return (
-                  <div
-                    key={user.id}
-                    style={styles.userItem}
-                    onMouseEnter={(e) => Object.assign(e.currentTarget.style, styles.userItemHover)}
-                    onMouseLeave={(e) => {
-                      e.currentTarget.style.backgroundColor = styles.userItem.backgroundColor;
-                      e.currentTarget.style.borderColor = styles.userItem.border.split(' ')[2];
-                    }}
-                  >
-                    <div style={styles.userInfo}>
-                      <div style={styles.userDetails}>
-                        <h3 style={styles.userName}>{user.full_name}</h3>
-                        <p style={styles.lastSeen}>Last seen: {new Date(user.last_seen).toLocaleString()}</p>
+                  return (
+                    <div
+                      key={user.id}
+                      style={styles.userItem}
+                      onMouseEnter={(e) => {
+                        e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.08)';
+                        e.currentTarget.style.borderColor = 'rgba(56, 189, 248, 0.3)';
+                      }}
+                      onMouseLeave={(e) => {
+                        e.currentTarget.style.backgroundColor = styles.userItem.backgroundColor;
+                        e.currentTarget.style.borderColor = styles.userItem.border.split(' ')[2];
+                      }}
+                    >
+                      <div style={styles.userInfo}>
+                        <div style={styles.userDetails}>
+                          <h3 style={styles.userName}>{user.full_name || 'Unknown User'}</h3>
+                          <p style={styles.lastSeen}>Last seen: {new Date(user.last_seen).toLocaleString()}</p>
+                        </div>
+                      </div>
+
+                      <div style={styles.statusContainer}>
+                        <div
+                          style={{
+                            ...styles.statusDot,
+                            ...(status === "online" ? styles.onlineDot : styles.offlineDot)
+                          }}
+                        />
+                        <span
+                          style={status === "online" ? styles.onlineStatus : styles.offlineStatus}
+                        >
+                          {status}
+                        </span>
                       </div>
                     </div>
+                  );
+                })}
 
-                    <div style={styles.statusContainer}>
-                      <div
-                        style={{
-                          ...styles.statusDot,
-                          ...(status === "online" ? styles.onlineDot : styles.offlineDot)
-                        }}
-                      />
-                      <span
-                        style={status === "online" ? styles.onlineStatus : styles.offlineStatus}
-                      >
-                        {status}
-                      </span>
-                    </div>
-                  </div>
-                );
-              })}
+              </div>
+            ) : (
+              <div style={styles.emptyState}>
+                No active users found in the last 6 hours.
+              </div>
+            )}
+          </div>
 
-            </div>
-          ) : (
-            <div style={styles.emptyState}>
-              No users available
-            </div>
-          )}
-        </div>
-
-        {/* Back Button */}
-        <div style={styles.footer}>
-          <a
-            href="/admin"
-            style={styles.backButton}
-            onMouseEnter={(e) => {
-              Object.assign(e.target.style, styles.backButtonHover);
-            }}
-            onMouseLeave={(e) => {
-              e.target.style.backgroundColor = styles.backButton.backgroundColor;
-              e.target.style.boxShadow = styles.backButton.boxShadow;
-            }}
-          >
-            ← Back to Admin
-          </a>
+          {/* Back Button */}
+          <div style={styles.footer}>
+            <a
+              href="/admin"
+              style={styles.backButton}
+              onMouseEnter={(e) => {
+                e.target.style.backgroundColor = 'rgba(255, 255, 255, 0.1)';
+                e.target.style.color = 'white';
+                e.target.style.transform = 'translateX(-4px)';
+              }}
+              onMouseLeave={(e) => {
+                e.target.style.backgroundColor = styles.backButton.backgroundColor;
+                e.target.style.color = styles.backButton.color;
+                e.target.style.transform = 'none';
+              }}
+            >
+              ← Back to Admin
+            </a>
+          </div>
         </div>
       </div>
     </div>

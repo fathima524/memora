@@ -1,310 +1,693 @@
 import React from "react";
 import { Link } from "react-router-dom";
+import Footer from "../Reuseable/Footer";
 
 export default function Welcome() {
-  return (
-    <div className="welcome-page">
-      <div className="welcome-box">
-        <h1 className="welcome-title">Welcome to Flash-doc</h1>
-        <p className="welcome-text">
-          Get ready to revise smarter with flashcards, spaced repetition, and curated questions for MBBS students.
-        </p>
+  const [isFlipped, setIsFlipped] = React.useState(false);
 
-        <Link to="/login" className="welcome-button">Get Started</Link>
-      </div>
+  // Pool of sample flashcards - 19 questions covering all MBBS subjects
+  const flashcardPool = [
+    {
+      subject: "Anatomy",
+      difficulty: "Hard",
+      question: "What are the branches of the Arch of Aorta?",
+      answer: "1. Brachiocephalic trunk\n2. Left common carotid artery\n3. Left subclavian artery"
+    },
+    {
+      subject: "Physiology",
+      difficulty: "Medium",
+      question: "What is the normal pH range of arterial blood?",
+      answer: "7.35 to 7.45\n\nValues below 7.35 indicate acidosis, while values above 7.45 indicate alkalosis."
+    },
+    {
+      subject: "Biochemistry",
+      difficulty: "Hard",
+      question: "What is the rate-limiting enzyme of glycolysis?",
+      answer: "Phosphofructokinase-1 (PFK-1)\n\nIt catalyzes the conversion of fructose-6-phosphate to fructose-1,6-bisphosphate."
+    },
+    {
+      subject: "Pathology",
+      difficulty: "Hard",
+      question: "What are the classic features of Virchow's Triad?",
+      answer: "1. Endothelial injury\n2. Abnormal blood flow (stasis/turbulence)\n3. Hypercoagulability"
+    },
+    {
+      subject: "Pharmacology",
+      difficulty: "Medium",
+      question: "What is the mechanism of action of Aspirin?",
+      answer: "Irreversibly inhibits COX-1 and COX-2 enzymes, preventing the synthesis of prostaglandins and thromboxane A2."
+    },
+    {
+      subject: "Microbiology",
+      difficulty: "Easy",
+      question: "Which bacteria is the most common cause of UTI?",
+      answer: "Escherichia coli (E. coli)\n\nAccounts for approximately 80-85% of community-acquired UTIs."
+    },
+    {
+      subject: "Forensic Medicine",
+      difficulty: "Medium",
+      question: "What are the stages of decomposition?",
+      answer: "1. Fresh stage (0-3 days)\n2. Bloating stage (4-10 days)\n3. Active decay (10-20 days)\n4. Advanced decay (20-50 days)\n5. Dry/skeletal remains (50+ days)"
+    },
+    {
+      subject: "Community Medicine",
+      difficulty: "Easy",
+      question: "What are the components of the epidemiological triad?",
+      answer: "1. Agent (causative factor)\n2. Host (susceptible individual)\n3. Environment (external factors)\n\nThese three components interact to cause disease."
+    },
+    {
+      subject: "Internal Medicine",
+      difficulty: "Medium",
+      question: "What are the diagnostic criteria for Diabetes Mellitus?",
+      answer: "1. Fasting glucose ≥126 mg/dL\n2. Random glucose ≥200 mg/dL with symptoms\n3. HbA1c ≥6.5%\n4. 2-hour OGTT ≥200 mg/dL"
+    },
+    {
+      subject: "Surgery",
+      difficulty: "Easy",
+      question: "What is McBurney's point?",
+      answer: "A point located 1/3 the distance from the anterior superior iliac spine (ASIS) to the umbilicus.\n\nMaximum tenderness at this point suggests acute appendicitis."
+    },
+    {
+      subject: "Obstetrics & Gynecology",
+      difficulty: "Medium",
+      question: "What are the cardinal movements of labor?",
+      answer: "1. Engagement\n2. Descent\n3. Flexion\n4. Internal rotation\n5. Extension\n6. External rotation (Restitution)\n7. Expulsion"
+    },
+    {
+      subject: "Pediatrics",
+      difficulty: "Easy",
+      question: "What is the normal respiratory rate for a newborn?",
+      answer: "30-60 breaths per minute\n\nRates above 60 may indicate respiratory distress in newborns."
+    },
+    {
+      subject: "Ophthalmology",
+      difficulty: "Medium",
+      question: "What are the features of acute angle-closure glaucoma?",
+      answer: "1. Severe eye pain\n2. Blurred vision with halos\n3. Red eye\n4. Fixed mid-dilated pupil\n5. Raised intraocular pressure\n6. Nausea and vomiting"
+    },
+    {
+      subject: "ENT",
+      difficulty: "Easy",
+      question: "What is the Weber test used for?",
+      answer: "To differentiate between conductive and sensorineural hearing loss.\n\nA tuning fork is placed on the forehead. Sound lateralizes to the affected ear in conductive loss and to the normal ear in sensorineural loss."
+    },
+    {
+      subject: "Orthopedics",
+      difficulty: "Medium",
+      question: "What are the components of the Unhappy Triad (O'Donoghue Triad)?",
+      answer: "1. ACL tear (Anterior Cruciate Ligament)\n2. MCL tear (Medial Collateral Ligament)\n3. Medial meniscus tear\n\nCommonly occurs from lateral impact to the knee."
+    },
+    {
+      subject: "Dermatology",
+      difficulty: "Easy",
+      question: "What is the ABCDE rule for melanoma detection?",
+      answer: "A - Asymmetry\nB - Border irregularity\nC - Color variation\nD - Diameter >6mm\nE - Evolution (changing over time)"
+    },
+    {
+      subject: "Psychiatry",
+      difficulty: "Medium",
+      question: "What are the core symptoms of Major Depressive Disorder?",
+      answer: "Must have at least 5 symptoms for 2+ weeks, including:\n1. Depressed mood (required)\n2. Anhedonia (loss of interest/pleasure)\n3. Sleep disturbance\n4. Appetite/weight changes\n5. Fatigue\n6. Guilt/worthlessness\n7. Concentration problems\n8. Psychomotor changes\n9. Suicidal thoughts"
+    },
+    {
+      subject: "Radiology",
+      difficulty: "Hard",
+      question: "What are the radiological features of pneumoperitoneum on an erect chest X-ray?",
+      answer: "1. Rigler's sign (both sides of bowel wall visible)\n2. Football sign (large oval lucency)\n3. Free air under the diaphragm (crescent-shaped lucency)\n\nIndicates bowel perforation requiring urgent surgical intervention."
+    },
+    {
+      subject: "Anesthesiology",
+      difficulty: "Medium",
+      question: "What are the components of the ASA Physical Status Classification?",
+      answer: "ASA I - Normal healthy patient\nASA II - Mild systemic disease\nASA III - Severe systemic disease\nASA IV - Severe disease, constant threat to life\nASA V - Moribund, not expected to survive\nASA VI - Brain-dead organ donor"
+    }
+  ];
+
+  // Randomly select a flashcard on component mount
+  const [currentCard] = React.useState(() => {
+    const randomIndex = Math.floor(Math.random() * flashcardPool.length);
+    return flashcardPool[randomIndex];
+  });
+
+  return (
+    <div className="landing-page">
+      {/* Navigation */}
+      <nav className="nav">
+        <div className="nav-container">
+          <div className="logo">
+            <span className="logo-icon">🩺</span>
+            <span className="logo-text">Memora</span>
+          </div>
+          <div className="nav-links">
+            <Link to="/login" className="nav-link">Login</Link>
+            <Link to="/login" className="nav-cta">Get Started</Link>
+          </div>
+        </div>
+      </nav>
+
+      {/* Hero Section */}
+      <section className="hero">
+        <div className="hero-content">
+          <div className="hero-text">
+            <h1 className="hero-title">
+              Master Medicine with <br />
+              <span className="text-gradient">Intelligent Flashcards</span>
+            </h1>
+            <p className="hero-subtitle">
+              The ultimate revision tool for MBBS students. Boost your memory with
+              active recall and scientifically-proven spaced repetition.
+            </p>
+            <div className="hero-btns">
+              <Link to="/login" className="btn-primary">Start Studying Free</Link>
+            </div>
+
+          </div>
+
+          <div className="hero-visual">
+            <div
+              className={`glass-card-container ${isFlipped ? 'flipped' : ''}`}
+              onClick={() => setIsFlipped(!isFlipped)}
+            >
+              <div className="glass-card-inner">
+                {/* Front */}
+                <div className="glass-card-front">
+                  <div className="card-header">
+                    <span className="card-tag">{currentCard.subject}</span>
+                    <span className={`card-difficulty ${currentCard.difficulty.toLowerCase()}`}>{currentCard.difficulty}</span>
+                  </div>
+                  <div className="card-body">
+                    <h3>{currentCard.question}</h3>
+                    <div className="card-action">Tap to reveal answer</div>
+                  </div>
+                  <div className="card-footer">
+                    <span>Click to flip</span>
+                  </div>
+                </div>
+                {/* Back */}
+                <div className="glass-card-back">
+                  <div className="card-header">
+                    <span className="card-tag">Answer</span>
+                    <span className="card-difficulty correct">Correct</span>
+                  </div>
+                  <div className="card-body">
+                    <p className="answer-list" style={{ whiteSpace: 'pre-line' }}>
+                      {currentCard.answer}
+                    </p>
+                  </div>
+                  <div className="card-footer">
+                    <span>Active Recall Success</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div className="floating-blob blob-1"></div>
+            <div className="floating-blob blob-2"></div>
+          </div>
+        </div>
+      </section>
+
+      {/* Features Section */}
+      <section className="features">
+        <div className="section-header">
+          <h2 className="section-title">Why Memora?</h2>
+          <p className="section-subtitle">Designed specifically for the intense curriculum of medical school.</p>
+        </div>
+        <div className="features-grid">
+          <div className="feature-card">
+            <div className="feature-icon">🧠</div>
+            <h3>Spaced Repetition</h3>
+            <p>Our algorithm predicts when you're about to forget a concept and brings it back at the perfect moment.</p>
+          </div>
+          <div className="feature-card">
+            <div className="feature-icon">🩺</div>
+            <h3>Curated MBBS Content</h3>
+            <p>Questions reviewed by medical professionals, covering Clinical, Pre-clinical and Para-clinical subjects.</p>
+          </div>
+          <div className="feature-card">
+            <div className="feature-icon">📊</div>
+            <h3>Detailed Analytics</h3>
+            <p>Track your daily progress, streaks, and identify your weak areas with visual charts.</p>
+          </div>
+        </div>
+      </section>
+      <Footer />
 
       <style>{`
+        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
+
+        :root {
+          --primary: #2563eb;
+          --primary-dark: #1e40af;
+          --bg: #0f172a;
+          --text: #f8fafc;
+          --text-muted: #94a3b8;
+          --accent: #38bdf8;
+          --glass-bg: rgba(30, 41, 59, 0.7);
+          --glass-border: rgba(255, 255, 255, 0.1);
+        }
+
         * {
           margin: 0;
           padding: 0;
           box-sizing: border-box;
         }
 
-        body, html {
-          margin: 0;
-          padding: 0;
+        body {
+          font-family: 'Plus Jakarta Sans', sans-serif;
+          background-color: var(--bg);
+          color: var(--text);
           overflow-x: hidden;
         }
 
-        .welcome-page {
+        .landing-page {
           min-height: 100vh;
-          min-height: 100dvh;
-          width: 100vw;
-          background: linear-gradient(135deg, #3c4b5c 0%, #5a6b7a 40%, #8b9da9 70%, #e8eaec 100%);
-          background-attachment: fixed;
-          background-repeat: no-repeat;
-          background-size: cover;
+          background: radial-gradient(circle at top right, #1e293b, #0f172a);
+        }
+
+        /* Nav */
+        .nav {
+          height: 80px;
           display: flex;
           align-items: center;
-          justify-content: center;
-          padding: 20px;
-          font-family: "Inter", "Segoe UI", "Roboto", sans-serif;
-          margin: 0;
-          position: relative;
-          animation: fadeInBackground 1.2s ease-out;
-        }
-
-        .welcome-box {
-          background: rgba(255, 255, 255, 0.95);
-          backdrop-filter: blur(10px);
-          border-radius: 20px;
-          padding: 60px 50px;
+          position: fixed;
+          top: 0;
           width: 100%;
-          max-width: 500px;
-          box-shadow: 0 20px 40px rgba(60, 75, 92, 0.3), 0 8px 16px rgba(60, 75, 92, 0.2);
-          border: 1px solid rgba(255, 255, 255, 0.2);
-          text-align: center;
-          animation: slideUpFade 1s ease-out 0.3s both;
+          z-index: 100;
+          background: rgba(15, 23, 42, 0.8);
+          backdrop-filter: blur(12px);
+          border-bottom: 1px solid var(--glass-border);
         }
 
-        .welcome-title {
-          font-size: 32px;
-          font-weight: 700;
-          color: #3c4b5c;
-          margin-bottom: 20px;
-          letter-spacing: -0.5px;
-          line-height: 1.2;
-          animation: slideUpFade 0.8s ease-out 0.6s both;
-        }
-
-        .welcome-text {
-          font-size: 16px;
-          font-weight: 400;
-          color: #5a6b7a;
-          line-height: 1.6;
-          margin-bottom: 35px;
-          letter-spacing: 0.2px;
-          animation: slideUpFade 0.8s ease-out 0.9s both;
-        }
-
-        .welcome-button {
-          display: inline-block;
+        .nav-container {
+          max-width: 1200px;
           width: 100%;
-          padding: 16px;
-          background: linear-gradient(135deg, #3c4b5c 0%, #5a6b7a 100%);
+          margin: 0 auto;
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          padding: 0 2rem;
+        }
+
+        .logo {
+          display: flex;
+          align-items: center;
+          gap: 0.5rem;
+          font-size: 1.5rem;
+          font-weight: 800;
+          text-decoration: none;
+        }
+
+        .logo-text { color: white; }
+        .text-accent { color: var(--accent); }
+
+        .nav-links {
+          display: flex;
+          align-items: center;
+          gap: 2rem;
+        }
+
+        .nav-link {
+          color: var(--text-muted);
+          text-decoration: none;
+          font-weight: 500;
+          transition: color 0.3s;
+        }
+
+        .nav-link:hover { color: white; }
+
+        .nav-cta {
+          background: var(--primary);
           color: white;
-          border: none;
-          border-radius: 12px;
-          font-size: 16px;
+          padding: 0.6rem 1.5rem;
+          border-radius: 99px;
+          text-decoration: none;
           font-weight: 600;
-          cursor: pointer;
-          transition: all 0.3s ease;
-          text-decoration: none;
-          text-align: center;
-          box-sizing: border-box;
-          animation: slideUpFade 0.8s ease-out 1.2s both, pulse 2s ease-in-out 2s infinite;
+          transition: transform 0.3s, background 0.3s;
         }
 
-        .welcome-button:hover {
-          background: linear-gradient(135deg, #2a3642 0%, #485460 100%);
+        .nav-cta:hover {
+          background: var(--primary-dark);
           transform: translateY(-2px);
-          box-shadow: 0 8px 20px rgba(60, 75, 92, 0.4);
-          text-decoration: none;
+        }
+
+        /* Hero */
+        .hero {
+          padding-top: 160px;
+          padding-bottom: 100px;
+          max-width: 1200px;
+          margin: 0 auto;
+          padding-left: 2rem;
+          padding-right: 2rem;
+        }
+
+        .hero-content {
+          display: grid;
+          grid-template-columns: 1.2fr 1fr;
+          gap: 4rem;
+          align-items: center;
+        }
+
+        .hero-title {
+          font-size: 4rem;
+          line-height: 1.1;
+          font-weight: 800;
+          margin-bottom: 1.5rem;
+          letter-spacing: -2px;
+        }
+
+        .text-gradient {
+          background: linear-gradient(to right, #38bdf8, #818cf8);
+          -webkit-background-clip: text;
+          -webkit-text-fill-color: transparent;
+        }
+
+        .hero-subtitle {
+          font-size: 1.25rem;
+          color: var(--text-muted);
+          line-height: 1.6;
+          margin-bottom: 2.5rem;
+          max-width: 540px;
+        }
+
+        .hero-btns {
+          display: flex;
+          gap: 1rem;
+          margin-bottom: 3rem;
+        }
+
+        .btn-primary {
+          background: var(--primary);
           color: white;
-          animation: none;
+          padding: 1rem 2rem;
+          border-radius: 12px;
+          text-decoration: none;
+          font-weight: 700;
+          transition: all 0.3s;
+          box-shadow: 0 10px 20px -5px rgba(37, 99, 235, 0.4);
         }
 
-        .welcome-button:active {
-          transform: translateY(0);
+        .btn-primary:hover {
+          background: var(--primary-dark);
+          transform: translateY(-3px);
+          box-shadow: 0 15px 30px -5px rgba(37, 99, 235, 0.5);
         }
 
-        /* Keyframe Animations */
-        @keyframes fadeInBackground {
-          from {
-            opacity: 0;
-            background-size: 110% 110%;
-          }
-          to {
-            opacity: 1;
-            background-size: 100% 100%;
-          }
+
+
+        .hero-stats {
+          display: flex;
+          gap: 2rem;
+          align-items: center;
         }
 
-        @keyframes slideUpFade {
-          from {
-            opacity: 0;
-            transform: translateY(30px);
-          }
-          to {
-            opacity: 1;
-            transform: translateY(0);
-          }
+        .stat-item {
+          display: flex;
+          flex-direction: column;
+        }
+
+        .stat-value {
+          font-size: 1.5rem;
+          font-weight: 800;
+          color: white;
+        }
+
+        .stat-label {
+          font-size: 0.875rem;
+          color: var(--text-muted);
+          font-weight: 500;
+        }
+
+        .stat-divider {
+          width: 1px;
+          height: 40px;
+          background: var(--glass-border);
+        }
+
+        /* Hero Visual - Interactive Card */
+        .hero-visual {
+          position: relative;
+          display: flex;
+          justify-content: center;
+          align-items: center;
+          perspective: 1000px;
+        }
+
+        .glass-card-container {
+          width: 100%;
+          max-width: 380px;
+          height: 320px;
+          cursor: pointer;
+          position: relative;
+          z-index: 2;
+          transition: transform 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .glass-card-inner {
+          position: relative;
+          width: 100%;
+          height: 100%;
+          text-align: center;
+          transition: transform 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+          transform-style: preserve-3d;
+        }
+
+        .flipped .glass-card-inner {
+          transform: rotateY(180deg);
+        }
+
+        .glass-card-front, .glass-card-back {
+          position: absolute;
+          width: 100%;
+          height: 100%;
+          -webkit-backface-visibility: hidden;
+          backface-visibility: hidden;
+          background: var(--glass-bg);
+          backdrop-filter: blur(20px);
+          border: 1px solid var(--glass-border);
+          border-radius: 24px;
+          padding: 2rem;
+          display: flex;
+          flex-direction: column;
+          box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+        }
+
+        .glass-card-back {
+          transform: rotateY(180deg);
+          background: rgba(15, 23, 42, 0.9);
+        }
+
+        .card-header {
+          display: flex;
+          justify-content: space-between;
+          margin-bottom: 2rem;
+        }
+
+        .card-tag {
+          background: rgba(56, 189, 248, 0.2);
+          color: var(--accent);
+          padding: 0.25rem 0.75rem;
+          border-radius: 99px;
+          font-size: 0.75rem;
+          font-weight: 700;
+          text-transform: uppercase;
+        }
+
+        .card-difficulty {
+          font-size: 0.75rem;
+          font-weight: 700;
+          text-transform: uppercase;
+        }
+
+        .card-difficulty.easy {
+          color: #4ade80;
+        }
+
+        .card-difficulty.medium {
+          color: #fbbf24;
+        }
+
+        .card-difficulty.hard {
+          color: #f87171;
+        }
+
+        .card-difficulty.correct {
+          color: #4ade80;
+        }
+
+        .card-body h3 {
+          font-size: 1.5rem;
+          line-height: 1.4;
+          margin-bottom: 1.5rem;
+          font-weight: 600;
+          color: white;
+        }
+
+        .answer-list {
+          text-align: left;
+          color: var(--accent);
+          line-height: 1.8;
+          font-weight: 600;
+        }
+
+        .card-action {
+          color: var(--text-muted);
+          font-size: 0.875rem;
+          text-align: center;
+          padding: 1rem;
+          border: 1.5px dashed var(--glass-border);
+          border-radius: 12px;
+        }
+
+        .card-footer {
+          margin-top: auto;
+          display: flex;
+          align-items: center;
+          gap: 0.75rem;
+          font-size: 0.75rem;
+          color: var(--text-muted);
+          font-weight: 600;
+        }
+
+        .pulse-indicator {
+          width: 8px;
+          height: 8px;
+          background: #22c55e;
+          border-radius: 50%;
+          box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.4);
+          animation: pulse 2s infinite;
+        }
+
+        .floating-blob {
+          position: absolute;
+          width: 300px;
+          height: 300px;
+          filter: blur(80px);
+          z-index: 1;
+          border-radius: 50%;
+        }
+
+        .blob-1 {
+          background: rgba(37, 99, 235, 0.3);
+          top: -20%;
+          right: -10%;
+        }
+
+        .blob-2 {
+          background: rgba(56, 189, 248, 0.2);
+          bottom: -10%;
+          left: -10%;
+        }
+
+        /* Features */
+        .features {
+          padding: 100px 2rem;
+          max-width: 1200px;
+          margin: 0 auto;
+        }
+
+        .section-header {
+          text-align: center;
+          margin-bottom: 4rem;
+        }
+
+        .section-title {
+          font-size: 2.5rem;
+          font-weight: 800;
+          margin-bottom: 1rem;
+        }
+
+        .section-subtitle {
+          color: var(--text-muted);
+          font-size: 1.125rem;
+        }
+
+        .features-grid {
+          display: grid;
+          grid-template-columns: repeat(3, 1fr);
+          gap: 2rem;
+        }
+
+        .feature-card {
+          background: rgba(255, 255, 255, 0.03);
+          border: 1px solid var(--glass-border);
+          padding: 2.5rem;
+          border-radius: 20px;
+          transition: all 0.3s;
+        }
+
+        .feature-card:hover {
+          background: rgba(255, 255, 255, 0.05);
+          transform: translateY(-5px);
+          border-color: rgba(255, 255, 255, 0.2);
+        }
+
+        .feature-icon {
+          font-size: 2.5rem;
+          margin-bottom: 1.5rem;
+          display: block;
+        }
+
+        .feature-card h3 {
+          margin-bottom: 1rem;
+          font-size: 1.25rem;
+          font-weight: 700;
+        }
+
+        .feature-card p {
+          color: var(--text-muted);
+          line-height: 1.6;
+        }
+
+        @keyframes float {
+          0%, 100% { transform: translateY(0); }
+          50% { transform: translateY(-20px); }
         }
 
         @keyframes pulse {
-          0%, 100% {
-            transform: scale(1);
-            box-shadow: 0 4px 12px rgba(60, 75, 92, 0.3);
+          0% { box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.7); }
+          70% { box-shadow: 0 0 0 10px rgba(34, 197, 94, 0); }
+          100% { box-shadow: 0 0 0 0 rgba(34, 197, 94, 0); }
+        }
+
+        /* Mobile Responsive */
+        @media (max-width: 1024px) {
+          .hero-content {
+            grid-template-columns: 1fr;
+            text-align: center;
           }
-          50% {
-            transform: scale(1.02);
-            box-shadow: 0 6px 20px rgba(60, 75, 92, 0.4);
+          .hero-text {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+          }
+          .hero-subtitle {
+            margin-left: auto;
+            margin-right: auto;
+          }
+          .hero-title {
+            font-size: 3rem;
+          }
+          .features-grid {
+            grid-template-columns: repeat(2, 1fr);
           }
         }
 
-        /* Responsive Design */
-        @media (max-width: 768px) {
-          .welcome-page {
-            padding: 15px;
+        @media (max-width: 640px) {
+          .hero-title {
+            font-size: 2.5rem;
           }
-          
-          .welcome-box {
-            padding: 50px 30px;
-            max-width: calc(100vw - 30px);
+          .features-grid {
+            grid-template-columns: 1fr;
           }
-          
-          .welcome-title {
-            font-size: 28px;
+          .hero-btns {
+            flex-direction: column;
+            width: 100%;
           }
-          
-          .welcome-text {
-            font-size: 15px;
-          }
-        }
-
-        @media (max-width: 480px) {
-          .welcome-page {
-            padding: 10px;
-          }
-          
-          .welcome-box {
-            padding: 40px 20px;
-            max-width: calc(100vw - 20px);
-            border-radius: 15px;
-          }
-          
-          .welcome-title {
-            font-size: 24px;
-            margin-bottom: 18px;
-          }
-          
-          .welcome-text {
-            font-size: 14px;
-            margin-bottom: 30px;
-          }
-          
-          .welcome-button {
-            padding: 14px;
-            font-size: 16px;
-          }
-        }
-
-        @media (max-width: 375px) {
-          .welcome-page {
-            padding: 8px;
-          }
-          
-          .welcome-box {
-            padding: 35px 15px;
-            max-width: calc(100vw - 16px);
-            border-radius: 12px;
-          }
-          
-          .welcome-title {
-            font-size: 22px;
-          }
-          
-          .welcome-text {
-            font-size: 13px;
-            line-height: 1.5;
-          }
-        }
-
-        @media (max-width: 320px) {
-          .welcome-page {
-            padding: 5px;
-          }
-          
-          .welcome-box {
-            padding: 30px 12px;
-            max-width: calc(100vw - 10px);
-            border-radius: 10px;
-          }
-          
-          .welcome-title {
-            font-size: 20px;
-            margin-bottom: 15px;
-          }
-          
-          .welcome-text {
-            font-size: 12px;
-            margin-bottom: 25px;
-          }
-          
-          .welcome-button {
-            padding: 12px;
-            font-size: 14px;
-          }
-        }
-
-        /* Ultra-wide screens */
-        @media (min-width: 1200px) {
-          .welcome-box {
-            max-width: 550px;
-            padding: 70px 60px;
-          }
-          
-          .welcome-title {
-            font-size: 36px;
-          }
-          
-          .welcome-text {
-            font-size: 18px;
-          }
-        }
-
-        /* Landscape orientation on mobile */
-        @media (max-height: 500px) and (orientation: landscape) {
-          .welcome-page {
-            padding: 10px;
-          }
-          
-          .welcome-box {
-            padding: 30px 40px;
-            max-width: 90vw;
-          }
-          
-          .welcome-title {
-            font-size: 24px;
-            margin-bottom: 15px;
-          }
-          
-          .welcome-text {
-            font-size: 14px;
-            margin-bottom: 25px;
-          }
-        }
-
-        /* High DPI displays */
-        @media (-webkit-min-device-pixel-ratio: 2), (min-resolution: 2dppx) {
-          .welcome-box {
-            border: 0.5px solid rgba(255, 255, 255, 0.3);
-          }
-        }
-
-        /* Reduce animations on devices that prefer reduced motion */
-        @media (prefers-reduced-motion: reduce) {
-          .welcome-page,
-          .welcome-box,
-          .welcome-title,
-          .welcome-text,
-          .welcome-button {
-            animation: none;
-          }
-          
-          .welcome-button:hover {
-            transform: none;
-          }
-        }
-
-        /* Dark mode support */
-        @media (prefers-color-scheme: dark) {
-          .welcome-box {
-            background: rgba(255, 255, 255, 0.98);
-            backdrop-filter: blur(15px);
+          .btn-primary, .btn-secondary {
+            text-align: center;
           }
         }
       `}</style>
-    </div>
+    </div >
   );
 }

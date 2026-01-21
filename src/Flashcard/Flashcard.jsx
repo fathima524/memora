@@ -2,740 +2,420 @@ import React, { useState, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { supabase } from "../supabase/supabaseClient";
 
-function Flashcard() {
+export default function Flashcard() {
   const navigate = useNavigate();
   const location = useLocation();
   const { subject, difficulty, mode } = location.state || {};
 
   const [questions, setQuestions] = useState([]);
-  const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
-  const [showAnswer, setShowAnswer] = useState(false);
+  const [currentIdx, setCurrentIdx] = useState(0);
+  const [isFlipped, setIsFlipped] = useState(false);
   const [showHint, setShowHint] = useState(false);
   const [score, setScore] = useState(0);
   const [streak, setStreak] = useState(0);
-  const [questionHistory, setQuestionHistory] = useState([]);
-  const [timeLeft, setTimeLeft] = useState(300);
-  const [isTimerActive, setIsTimerActive] = useState(true);
-  const [sessionStartTime, setSessionStartTime] = useState(Date.now());
-  const [spacedRepetitionQueue, setSpacedRepetitionQueue] = useState([]);
-  const [subjects, setSubjects] = useState([]);
+  const [loading, setLoading] = useState(true);
   const [user, setUser] = useState(null);
+  const [subjects, setSubjects] = useState([]);
+  const [sessionComplete, setSessionComplete] = useState(false);
+  const [spacedQueue, setSpacedQueue] = useState([]);
 
-useEffect(() => {
-  const fetchUserAndProfile = async () => {
-    const { data: { user }, error: userError } = await supabase.auth.getUser();
-    if (userError) return console.error(userError);
-    if (!user) return;
-
-    setUser(user);
-
-    // Fetch profile data
-    const { data: profileData, error: profileError } = await supabase
-      .from("profiles")
-      .select("*")
-      .eq("id", user.id)
-      .single();
-
-    if (profileError) return console.error(profileError);
-    if (!profileData) return;
-
-    // Populate state
-    setStreak(profileData.current_streak || 0);
-    setQuestionHistory(profileData.recent_activity || []);
-    setTimeLeft(300); // default or any saved value
-    // ...any other state you want to restore
-
-    // Optional: sync with localStorage
-    localStorage.setItem("currentStreak", (profileData.current_streak || 0).toString());
-    localStorage.setItem("recentActivity", JSON.stringify(profileData.recent_activity || []));
+  // SRS Configuration
+  const SRS_RULES = {
+    correct: { easy: 15, medium: 10, hard: 5 },
+    incorrect: { easy: 3, medium: 2, hard: 1 }
   };
 
-  fetchUserAndProfile();
-}, []);
-
-
-  // Fetch subjects
   useEffect(() => {
-    const fetchSubjects = async () => {
-      const { data, error } = await supabase.from("subjects").select("*");
-      if (!error) setSubjects(data);
-    };
-    fetchSubjects();
-  }, []);
+    const initSession = async () => {
+      // 1. Get User
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) { navigate("/login"); return; }
+      setUser(user);
 
-  const SPACED_REPETITION_CONFIG = {
-    correct: { easy: 15, medium: 20, hard: 25 },
-    incorrect: { easy: 3, medium: 5, hard: 7 }
-  };
+      // 2. Get Profile & Subjects
+      const [profileRes, subjectsRes] = await Promise.all([
+        supabase.from("profiles").select("*").eq("id", user.id).single(),
+        supabase.from("subjects").select("*")
+      ]);
 
-  // Fetch questions - Updated to include image_url
-  useEffect(() => {
-    const fetchQuestions = async () => {
-      let query = supabase.from("flashcards").select("*, image_url");
+      if (profileRes.data) setStreak(profileRes.data.current_streak || 0);
+      if (subjectsRes.data) setSubjects(subjectsRes.data);
 
+      // 3. Get Questions
+      let query = supabase.from("flashcards").select("*");
       if (mode === "challenge") {
-        if (subject === "all") {
-          // no filter
-        } else if (Array.isArray(subject) && subject.length > 0) {
-          query = query.in("subject_id", subject);
-        }
-      } else {
-        if (subject && subject !== "mixed") {
-          query = query.eq("subject_id", subject);
-        }
+        if (Array.isArray(subject)) query = query.in("subject_id", subject);
+      } else if (subject && subject !== "mixed") {
+        query = query.eq("subject_id", subject);
       }
 
-      if (difficulty && difficulty !== "mixed") {
+      if (difficulty && difficulty !== "mixed" && difficulty !== "mixed") {
         query = query.eq("difficulty", difficulty);
       }
 
-      const { data, error } = await query;
-      if (error) console.error("Error fetching flashcards:", error);
-      else setQuestions(shuffleArray(data));
+      const { data: qs, error } = await query;
+      if (error || !qs?.length) {
+        setLoading(false);
+        return;
+      }
 
-      setSessionStartTime(Date.now());
+      setQuestions(shuffle(qs));
+      setLoading(false);
     };
 
-    fetchQuestions();
-  }, [subject, difficulty, mode]);
+    initSession();
+  }, [subject, difficulty, mode, navigate]);
 
-  // Timer
-  useEffect(() => {
-    let interval = null;
-    if (isTimerActive && timeLeft > 0) {
-      interval = setInterval(() => setTimeLeft((time) => time - 1), 1000);
-    } else if (timeLeft === 0) {
-      handleFinishSession();
+  const shuffle = (arr) => [...arr].sort(() => Math.random() - 0.5);
+
+  const handleReveal = () => setIsFlipped(true);
+
+  const handleGrade = (isCorrect) => {
+    const currentQ = questions[currentIdx];
+    if (!currentQ) return;
+
+    // Update Stats
+    if (isCorrect) setScore(s => s + 1);
+
+    // Spaced Repetition Logic
+    const diff = currentQ.difficulty?.toLowerCase() || 'medium';
+    const interval = SRS_RULES[isCorrect ? 'correct' : 'incorrect'][diff] || 5;
+
+    // If incorrect or first time correct, re-queue
+    if (!isCorrect || !currentQ._isRepeat) {
+      setSpacedQueue(prev => [...prev, {
+        ...currentQ,
+        _isRepeat: true,
+        _reappearAt: currentIdx + interval
+      }]);
     }
-    return () => clearInterval(interval);
-  }, [isTimerActive, timeLeft]);
 
-  const shuffleArray = (array) => {
-    const shuffled = [...array];
-    for (let i = shuffled.length - 1; i > 0; i--) {
-      const j = Math.floor(Math.random() * (i + 1));
-      [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
-    }
-    return shuffled;
+    moveToNext();
   };
 
-  const addToSpacedRepetition = (question, isCorrect) => {
-    const reappearAfter =
-      SPACED_REPETITION_CONFIG[isCorrect ? "correct" : "incorrect"][question.difficulty];
-    setSpacedRepetitionQueue((prev) => [
-      ...prev,
-      { question, reappearAfter, currentCount: 0, isCorrect, addedAt: Date.now() }
-    ]);
-  };
+  const moveToNext = () => {
+    const nextIdx = currentIdx + 1;
 
-  const getNextQuestion = () => {
-    const readyQuestions = spacedRepetitionQueue.filter(
-      (item) => item.currentCount >= item.reappearAfter
-    );
-    if (readyQuestions.length > 0) {
-      const questionToReturn = readyQuestions[0];
-      setSpacedRepetitionQueue((prev) =>
-        prev.filter((item) => item !== questionToReturn)
-      );
-      return questionToReturn.question;
-    }
-    return currentQuestionIndex < questions.length - 1
-      ? questions[currentQuestionIndex + 1]
-      : null;
-  };
+    // Check if any question from SRS queue is ready
+    const readyFromQueue = spacedQueue.find(q => q._reappearAt <= nextIdx);
 
-  const handleAnswer = (isCorrect) => {
-    setQuestionHistory((prev) => [
-      ...prev,
-      {
-        question: questions[currentQuestionIndex],
-        isCorrect,
-        usedHint: showHint,
-        timeSpent: 300 - timeLeft
-      }
-    ]);
-
-    setScore((prev) => (isCorrect ? prev + 1 : prev));
-    setStreak((prev) => (isCorrect ? prev + 1 : 0));
-    addToSpacedRepetition(questions[currentQuestionIndex], isCorrect);
-    handleNextQuestion();
-  };
-
-  const handleNextQuestion = () => {
-    setSpacedRepetitionQueue((prev) =>
-      prev.map((item) => ({ ...item, currentCount: item.currentCount + 1 }))
-    );
-
-    const nextQuestion = getNextQuestion();
-
-    if (nextQuestion) {
-      const nextIndex = questions.findIndex((q) => q.id === nextQuestion.id);
-      if (nextIndex !== -1) setCurrentQuestionIndex(nextIndex);
-      else {
-        setQuestions((prev) => [...prev, nextQuestion]);
-        setCurrentQuestionIndex(questions.length);
-      }
-
-      setShowAnswer(false);
-      setShowHint(false);
-      setTimeLeft(300);
-      setIsTimerActive(true);
+    if (readyFromQueue) {
+      // Injected from queue
+      setQuestions(prev => {
+        const newQs = [...prev];
+        newQs.splice(nextIdx, 0, readyFromQueue);
+        return newQs;
+      });
+      setSpacedQueue(prev => prev.filter(q => q.id !== readyFromQueue.id));
+      proceed(nextIdx);
+    } else if (nextIdx < questions.length) {
+      proceed(nextIdx);
     } else {
-      handleFinishSession();
+      setSessionComplete(true);
     }
   };
 
-  const handleFinishSession = async () => {
+  const proceed = (idx) => {
+    setCurrentIdx(idx);
+    setIsFlipped(false);
+    setShowHint(false);
+  };
+
+  const saveAndExit = async () => {
     if (!user) return;
 
-    const totalQs = questions?.length || 0;
+    // Fetch latest profile state
+    const { data: profile } = await supabase.from("profiles").select("*").eq("id", user.id).single();
 
-    const sessionData = {
-      score,
-      totalQuestions: totalQs,
-      timeSpent: Math.floor((Date.now() - sessionStartTime) / 1000),
-      subject,
-      difficulty,
-      spacedRepetitionData: spacedRepetitionQueue,
-      mode,
-      timestamp: new Date().toISOString()
-    };
-
-    // Fetch profile
-    const { data: profileData, error } = await supabase
-      .from("profiles")
-      .select("current_streak, questions_today, last_study_date, recent_activity")
-      .eq("id", user.id)
-      .single();
-
-    if (error) {
-      console.error("Error fetching profile:", error);
-      return;
-    }
-
-    let currentStreak = profileData?.current_streak || 0;
-    let questionsToday = profileData?.questions_today || 0;
-    let recentActivity = profileData?.recent_activity || [];
-
-    // Streak calculation
     const today = new Date().toDateString();
-    const lastStudyDate = profileData?.last_study_date
-      ? new Date(profileData.last_study_date).toDateString()
-      : null;
+    const lastDate = profile?.last_study_date ? new Date(profile.last_study_date).toDateString() : null;
 
-    if (lastStudyDate === today) {
-      // already studied today
-    } else if (lastStudyDate === new Date(Date.now() - 86400000).toDateString()) {
-      currentStreak += 1;
+    let newStreak = profile?.current_streak || 0;
+    let newTodayQs = profile?.questions_today || 0;
+
+    if (lastDate === today) {
+      newTodayQs += questions.length;
     } else {
-      currentStreak = 1;
+      newTodayQs = questions.length;
+      const yesterday = new Date(Date.now() - 86400000).toDateString();
+      newStreak = lastDate === yesterday ? newStreak + 1 : 1;
     }
 
-    questionsToday += totalQs;
+    // Prepare Activity Log
+    const subName = subjects.find(s => s.id === subject)?.name || "Mixed Study";
+    const activity = [{
+      subject: subName,
+      questions: questions.length,
+      score: score,
+      accuracy: Math.round((score / questions.length) * 100),
+      timestamp: new Date().toISOString()
+    }, ...(profile?.recent_activity || [])].slice(0, 10);
 
-    // Update recent activity
-    let activityLabel;
-    if (mode === "challenge") activityLabel = "Challenge mode";
-    else if (subject === "mixed") activityLabel = "Mixed";
-    else if (subject === "all") activityLabel = "All Subjects";
-    else if (Array.isArray(subject)) activityLabel = "Multiple Subjects";
-    else {
-      const found = subjects.find((s) => s.id === subject);
-      activityLabel = found ? found.name : "Unknown";
-    }
+    await supabase.from("profiles").update({
+      current_streak: newStreak,
+      questions_today: newTodayQs,
+      last_study_date: new Date().toISOString(),
+      recent_activity: activity,
+      longest_streak: Math.max(newStreak, profile?.longest_streak || 0)
+    }).eq("id", user.id);
 
-    recentActivity.unshift({
-      subject: activityLabel,
-      questions: totalQs,
-      timestamp: new Date().toLocaleString()
-    });
-    if (recentActivity.length > 4) recentActivity = recentActivity.slice(0, 4);
-
-    // Save back to Supabase
-    const { error: updateError } = await supabase
-      .from("profiles")
-      .update({
-        current_streak: currentStreak,
-        questions_today: questionsToday,
-        last_study_date: new Date(),
-        recent_activity: recentActivity
-      })
-      .eq("id", user.id);
-
-    if (updateError) console.error("Error updating profile:", updateError);
-
-    // Update localStorage
-    localStorage.setItem("currentStreak", currentStreak.toString());
-    localStorage.setItem("questionsToday", questionsToday.toString());
-    localStorage.setItem("lastStudyDate", today);
-    localStorage.setItem("recentActivity", JSON.stringify(recentActivity));
-    localStorage.setItem("lastSession", JSON.stringify(sessionData));
-    localStorage.setItem(
-      "spacedRepetitionQueue",
-      JSON.stringify(spacedRepetitionQueue)
-    );
-
-    navigate("/dashboard", { state: { completedSession: true, sessionData } });
+    navigate("/dashboard", { state: { completedSession: true } });
   };
 
-  const formatTime = (seconds) => {
-    const mins = Math.floor(seconds / 60);
-    const secs = seconds % 60;
-    return `${mins}:${secs.toString().padStart(2, "0")}`;
-  };
+  if (loading) return (
+    <div className="flashcard-page loading">
+      <div className="loader-ring"></div>
+      <p>Preparing your Memora session...</p>
+      <style>{`
+        .flashcard-page.loading { 
+          height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center; 
+          background: #0f172a; color: white; gap: 1.5rem; font-family: sans-serif;
+        }
+        .loader-ring { width: 50px; height: 50px; border: 4px solid rgba(255,255,255,0.1); border-top-color: #38bdf8; border-radius: 50%; animation: spin 1s linear infinite; }
+        @keyframes spin { to { transform: rotate(360deg); } }
+      `}</style>
+    </div>
+  );
 
-  const getDifficultyColor = (diff) => {
-    const colors = {
-      easy: "linear-gradient(135deg, #28a745 0%, #20c997 100%)",
-      medium: "linear-gradient(135deg, #ffc107 0%, #fd7e14 100%)",
-      hard: "linear-gradient(135deg, #dc3545 0%, #e74c3c 100%)"
-    };
-    return colors[diff] || colors.easy;
-  };
-
-  const currentQuestion = questions[currentQuestionIndex];
-
-  if (!questions.length) {
-    return (
-      <div style={styles.noQuestionsContainer}>
-        <div style={styles.card}>
-          <h2>No questions available</h2>
-          <p>Please select a different subject or difficulty level.</p>
-          <button onClick={() => navigate("/dashboard")} style={styles.button}>
-            Back to Dashboard
-          </button>
-        </div>
+  if (!questions.length) return (
+    <div className="flashcard-page empty">
+      <div className="empty-card">
+        <h2>No Cards Found</h2>
+        <p>We couldn't find any flashcards matching your criteria. Try adjusting the subject or difficulty.</p>
+        <button onClick={() => navigate("/dashboard")} className="btn-back">Return to Dashboard</button>
       </div>
-    );
-  }
+      <style>{`.flashcard-page.empty { height: 100vh; background: #0f172a; display: flex; align-items: center; justify-content: center; padding: 2rem; color: white; font-family: sans-serif; } .empty-card { background: rgba(30,41,59,0.7); border: 1px solid rgba(255,255,255,0.1); padding: 3rem; border-radius: 24px; text-align: center; max-width: 400px; } .btn-back { margin-top: 2rem; padding: 1rem 2rem; background: #2563eb; color: white; border: none; border-radius: 12px; font-weight: 700; cursor: pointer; }`}</style>
+    </div>
+  );
+
+  if (sessionComplete) return (
+    <div className="flashcard-page complete">
+      <div className="complete-card">
+        <span className="trophy">🏆</span>
+        <h1>Round Complete!</h1>
+        <div className="session-stats">
+          <div className="s-item"><span>Cards</span><strong>{questions.length}</strong></div>
+          <div className="s-item"><span>Accuracy</span><strong>{Math.round((score / questions.length) * 100)}%</strong></div>
+        </div>
+        <button onClick={saveAndExit} className="btn-finish">Finish & Save Progress</button>
+      </div>
+      <style>{`
+        .flashcard-page.complete { height: 100vh; background: #0f172a; display: flex; align-items: center; justify-content: center; color: white; font-family: 'Plus Jakarta Sans', sans-serif; }
+        .complete-card { background: rgba(30,41,59,0.8); backdrop-filter: blur(20px); border: 1px solid rgba(255,255,255,0.1); padding: 4rem 3rem; border-radius: 32px; text-align: center; width: 100%; max-width: 450px; }
+        .trophy { font-size: 5rem; display: block; margin-bottom: 2rem; }
+        .session-stats { display: flex; justify-content: space-around; margin: 2rem 0 3rem; background: rgba(0,0,0,0.2); padding: 1.5rem; border-radius: 16px; }
+        .s-item { display: flex; flex-direction: column; gap: 0.5rem; }
+        .s-item span { color: #94a3b8; font-size: 0.8rem; text-transform: uppercase; font-weight: 700; }
+        .s-item strong { font-size: 1.5rem; }
+        .btn-finish { width: 100%; padding: 1.25rem; background: #22c55e; color: white; border: none; border-radius: 16px; font-weight: 800; font-size: 1.1rem; cursor: pointer; transition: 0.3s; }
+        .btn-finish:hover { background: #16a34a; transform: translateY(-3px); box-shadow: 0 10px 20px rgba(34, 197, 94, 0.3); }
+      `}</style>
+    </div>
+  );
+
+  const currentQ = questions[currentIdx];
 
   return (
-    <div style={styles.container}>
-      <div style={styles.flashcard}>
-        <div
-          style={{
-            ...styles.badge,
-            background: getDifficultyColor(currentQuestion?.difficulty)
-          }}
-        >
-          {currentQuestion?.difficulty || "Easy"}
+    <div className="flashcard-page study">
+      <div className="auth-mesh"></div>
+      {/* Session Progress Header */}
+      <header className="study-header">
+        <div className="header-left">
+          <button onClick={() => navigate("/dashboard")} className="btn-exit">✕ Exit</button>
+          <span className="subject-tag">{subjects.find(s => s.id === subject)?.name || "MBBS Revision"}</span>
         </div>
-
-        <div style={styles.header}>
-          
-          <div style={styles.headerItem}>
-            Question {currentQuestionIndex + 1} of {questions.length}
+        <div className="progress-container">
+          <div className="progress-bar">
+            <div className="progress-fill" style={{ width: `${((currentIdx + 1) / questions.length) * 100}%` }}></div>
           </div>
-          <div style={{ ...styles.headerItem, display: "none" }}>🔥 Streak: {streak}</div>
+          <span className="progress-text">Card {currentIdx + 1} of {questions.length}</span>
         </div>
+        <div className="header-right">
+          <span className="score-badge">Accuracy: {score}</span>
+        </div>
+      </header>
 
-        <div style={showAnswer ? styles.cardBack : styles.cardFront}>
-          {!showAnswer ? (
-            // Question content with optional image
-            currentQuestion?.image_url ? (
-              <div style={styles.splitLayout}>
-                <div style={styles.imageSection}>
-                  <img 
-                    src={currentQuestion.image_url} 
-                    alt="Question illustration"
-                    style={styles.questionImage}
-                    onError={(e) => {
-                      e.target.style.display = 'none';
-                      e.target.nextSibling.style.display = 'block';
-                    }}
-                  />
-                  <div style={{...styles.imageError, display: 'none'}}>
-                    🖼️ Image not available
-                  </div>
+      <main className="card-arena">
+        <div className={`study-card ${isFlipped ? 'flipped' : ''}`}>
+          <div className="card-face front">
+            <div className="card-meta">
+              <span className={`difficulty-indicator ${currentQ.difficulty}`}>{currentQ.difficulty}</span>
+              {currentQ._isRepeat && <span className="repeat-badge">Needs Practice</span>}
+            </div>
+
+            <div className="question-content">
+              {currentQ.image_url && <div className="q-image-wrapper"><img src={currentQ.image_url} alt="Reference" /></div>}
+              <h2>{currentQ.question}</h2>
+            </div>
+
+            <div className="card-footer-hint">
+              {showHint && <p className="hint-text">💡 {currentQ.hint || "No hint available for this card."}</p>}
+              {!showHint && currentQ.hint && <button onClick={() => setShowHint(true)} className="btn-hint-toggle">Show Hint</button>}
+            </div>
+
+            <button onClick={handleReveal} className="btn-reveal">Reveal Answer</button>
+          </div>
+
+          <div className="card-face back">
+            <div className="answer-content">
+              <div className="ans-header">COMPLETED ANSWER</div>
+              {currentQ.answer_image_url && <div className="q-image-wrapper"><img src={currentQ.answer_image_url} alt="Answer Reference" /></div>}
+              <h3>{currentQ.correct}</h3>
+              {currentQ.explanation && (
+                <div className="explanation-box">
+                  <header>Explanation</header>
+                  <p>{currentQ.explanation}</p>
                 </div>
-                <div style={styles.textSection}>
-                  <h2 style={styles.questionText}>{currentQuestion?.question}</h2>
-                </div>
-              </div>
-            ) : (
-              <div style={styles.textOnly}>
-                <h2 style={styles.questionText}>{currentQuestion?.question}</h2>
-              </div>
-            )
-          ) : (
-            // Answer content
-            <>
-              <h3 style={styles.answerText}>
-                Answer: {currentQuestion?.correct}
-              </h3>
-              {currentQuestion?.explanation && (
-                <p style={styles.explanation}>{currentQuestion.explanation}</p>
               )}
-            </>
-          )}
-        </div>
+            </div>
 
-        {showHint && currentQuestion?.hint && (
-          <div style={styles.hint}>
-            💡 <strong>Hint:</strong> {currentQuestion.hint}
+            <div className="grading-actions">
+              <button onClick={() => handleGrade(false)} className="btn-grade red">
+                <span>Mistake</span>
+                <div className="key-hint">✕</div>
+              </button>
+              <button onClick={() => handleGrade(true)} className="btn-grade green">
+                <span>Mastered</span>
+                <div className="key-hint">✓</div>
+              </button>
+            </div>
           </div>
-        )}
-
-        <div style={styles.buttonGroup}>
-          {!showAnswer ? (
-            <>
-              {currentQuestion?.difficulty === "hard" &&
-                currentQuestion?.hint &&
-                !showHint && (
-                  <button
-                    style={styles.secondaryButton}
-                    onClick={() => setShowHint(true)}
-                  >
-                    💡 Show Hint
-                  </button>
-                )}
-              <button
-                style={styles.button}
-                onClick={() => {
-                  setShowAnswer(true);
-                  setIsTimerActive(false);
-                }}
-              >
-                🔍 Show Answer
-              </button>
-            </>
-          ) : (
-            <>
-              <button
-                style={{ ...styles.button, ...styles.success }}
-                onClick={() => handleAnswer(true)}
-              >
-                ✅ I Got It Right
-              </button>
-              <button
-                style={{ ...styles.button, ...styles.danger }}
-                onClick={() => handleAnswer(false)}
-              >
-                ❌ I Got It Wrong
-              </button>
-            </>
-          )}
         </div>
+      </main>
 
-        <div style={{ textAlign: "center", marginTop: window.innerWidth <= 480 ? "1.2rem" : "1.5rem" }}>
-          <button
-            style={styles.secondaryButton}
-            onClick={() => navigate("/dashboard")}
-          >
-            🏠 Back to Dashboard
-          </button>
-        </div>
-      </div>
+      <style>{`
+        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
 
-      <div style={styles.progressContainer}>
-        <div
-          style={{
-            ...styles.progressBar,
-            width: `${((currentQuestionIndex + 1) / questions.length) * 100}%`
-          }}
-        ></div>
-      </div>
+        .flashcard-page.study {
+          min-height: 100vh; background: #0f172a; color: white;
+          font-family: 'Plus Jakarta Sans', sans-serif;
+          display: flex; flex-direction: column;
+          position: relative; overflow-y: auto;
+        }
 
-      <style>{`@keyframes pulse { 0% { transform: scale(1); } 50% { transform: scale(1.05); } 100% { transform: scale(1); } }`}</style>
+        .auth-mesh {
+          position: absolute;
+          top: 0; left: 0; right: 0; bottom: 0;
+          background: 
+            radial-gradient(circle at 100% 0%, rgba(37, 99, 235, 0.1) 0%, transparent 40%),
+            radial-gradient(circle at 0% 100%, rgba(56, 189, 248, 0.05) 0%, transparent 40%);
+          z-index: 0;
+          pointer-events: none;
+        }
+
+        .study-header {
+          padding: 1.5rem 2.5rem; display: flex; justify-content: space-between; align-items: center;
+          background: rgba(15, 23, 42, 0.6); backdrop-filter: blur(20px); z-index: 100;
+          border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+          position: sticky; top: 0;
+        }
+
+        .btn-exit { 
+          padding: 0.6rem 1.2rem; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1);
+          color: #94a3b8; font-weight: 700; cursor: pointer; border-radius: 12px; transition: 0.2s;
+        }
+        .btn-exit:hover { background: rgba(239, 68, 68, 0.1); color: #f87171; border-color: rgba(239, 68, 68, 0.2); }
+
+        .subject-tag { margin-left: 1.5rem; background: rgba(37, 99, 235, 0.15); color: #38bdf8; padding: 0.45rem 1.25rem; border-radius: 99px; font-size: 0.8rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px; }
+
+        .progress-container { flex: 1; max-width: 450px; padding: 0 3rem; display: flex; flex-direction: column; align-items: center; gap: 0.6rem; }
+        .progress-bar { width: 100%; height: 8px; background: rgba(255, 255, 255, 0.05); border-radius: 4px; overflow: hidden; }
+        .progress-fill { height: 100%; background: linear-gradient(to right, #2563eb, #38bdf8); transition: width 0.6s cubic-bezier(0.34, 1.56, 0.64, 1); box-shadow: 0 0 15px rgba(37, 99, 235, 0.3); }
+        .progress-text { font-size: 0.75rem; color: #64748b; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; }
+
+        .score-badge { font-weight: 800; color: #22c55e; background: rgba(34, 197, 94, 0.1); padding: 0.5rem 1.25rem; border-radius: 14px; font-size: 0.9rem; border: 1px solid rgba(34, 197, 94, 0.15); }
+
+        .card-arena { 
+          flex: 1; display: flex; align-items: flex-start; justify-content: center; 
+          padding: 4rem 2rem; position: relative; z-index: 10;
+        }
+
+        .study-card {
+          width: 100%; max-width: 640px; min-height: 580px; position: relative;
+          perspective: 2000px; transform-style: preserve-3d;
+        }
+
+        .card-face {
+          position: absolute; width: 100%; height: 100%;
+          background: rgba(30, 41, 59, 0.4); backdrop-filter: blur(30px);
+          border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 40px;
+          padding: 3rem; display: flex; flex-direction: column;
+          backface-visibility: hidden; transition: transform 0.8s cubic-bezier(0.175, 0.885, 0.32, 1.275), box-shadow 0.4s;
+          box-shadow: 0 40px 100px -20px rgba(0, 0, 0, 0.6);
+          overflow-y: auto;
+          scrollbar-width: thin;
+          scrollbar-color: rgba(255,255,255,0.1) transparent;
+        }
+
+        .card-face::-webkit-scrollbar { width: 6px; }
+        .card-face::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 10px; }
+
+        .study-card.flipped .front { transform: rotateY(180deg); }
+        .study-card.flipped .back { transform: rotateY(0deg); }
+        .back { transform: rotateY(-180deg); }
+
+        .card-meta { display: flex; justify-content: space-between; margin-bottom: 2rem; }
+        .difficulty-indicator { text-transform: uppercase; font-size: 0.7rem; font-weight: 900; padding: 0.35rem 1rem; border-radius: 8px; letter-spacing: 1px; }
+        .difficulty-indicator.easy { background: rgba(34, 197, 94, 0.15); color: #4ade80; border: 1px solid rgba(34, 197, 94, 0.2); }
+        .difficulty-indicator.medium { background: rgba(234, 179, 8, 0.15); color: #facc15; border: 1px solid rgba(234, 179, 8, 0.2); }
+        .difficulty-indicator.hard { background: rgba(239, 68, 68, 0.15); color: #f87171; border: 1px solid rgba(239, 68, 68, 0.2); }
+        .repeat-badge { background: #f97316; color: white; padding: 0.35rem 1rem; border-radius: 8px; font-size: 0.7rem; font-weight: 900; letter-spacing: 1px; }
+
+        .question-content { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; }
+        .question-content h2 { font-size: 2rem; line-height: 1.4; font-weight: 800; margin: 0; letter-spacing: -1px; }
+        .q-image-wrapper { margin-bottom: 2rem; width: 100%; max-height: 280px; overflow: hidden; border-radius: 20px; border: 1px solid rgba(255,255,255,0.1); box-shadow: 0 10px 30px rgba(0,0,0,0.3); }
+        .q-image-wrapper img { width: 100%; height: 100%; object-fit: contain; background: rgba(0,0,0,0.2); }
+
+        .btn-reveal {
+          width: 100%; padding: 1.25rem; background: #2563eb; color: white;
+          border: none; border-radius: 18px; font-weight: 800; font-size: 1.15rem;
+          cursor: pointer; margin-top: 2.5rem; transition: 0.3s;
+          box-shadow: 0 10px 20px -5px rgba(37, 99, 235, 0.4);
+          flex-shrink: 0;
+        }
+        .btn-reveal:hover { background: #1d4ed8; transform: translateY(-3px); box-shadow: 0 20px 35px -5px rgba(37, 99, 235, 0.5); }
+
+        .card-footer-hint { min-height: 60px; display: flex; align-items: center; justify-content: center; margin-top: 1rem; }
+        .hint-text { font-style: italic; color: #94a3b8; font-size: 0.9rem; text-align: center; background: rgba(255,255,255,0.03); padding: 0.75rem 1.5rem; border-radius: 12px; }
+        .btn-hint-toggle { background: none; border: none; color: #64748b; font-weight: 700; cursor: pointer; font-size: 0.9rem; transition: 0.2s; }
+        .btn-hint-toggle:hover { color: #38bdf8; }
+
+        .ans-header { font-size: 0.75rem; font-weight: 900; color: #64748b; letter-spacing: 3px; margin-bottom: 2rem; text-transform: uppercase; }
+        .answer-content { flex: 1; text-align: center; }
+        .answer-content h3 { font-size: 1.75rem; color: #4ade80; margin-bottom: 2rem; line-height: 1.3; font-weight: 800; }
+        
+        .explanation-box { background: rgba(15, 23, 42, 0.4); border-radius: 22px; padding: 1.5rem; text-align: left; border: 1px solid rgba(255,255,255,0.05); margin-bottom: 1rem; }
+        .explanation-box header { font-weight: 900; font-size: 0.75rem; color: #38bdf8; margin-bottom: 0.75rem; text-transform: uppercase; letter-spacing: 1.5px; }
+        .explanation-box p { font-size: 0.95rem; color: #cbd5e0; line-height: 1.6; margin: 0; }
+
+        .grading-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin-top: 2rem; flex-shrink: 0; }
+        .btn-grade {
+          display: flex; flex-direction: column; align-items: center; gap: 0.875rem;
+          padding: 1.25rem; border: none; border-radius: 24px; color: white; font-weight: 800;
+          cursor: pointer; transition: 0.3s;
+        }
+        .btn-grade.red { background: rgba(239, 68, 68, 0.05); border: 1px solid rgba(239, 68, 68, 0.15); color: #f87171; }
+        .btn-grade.red:hover { background: #ef4444; color: white; transform: translateY(-3px); box-shadow: 0 10px 25px rgba(239, 68, 68, 0.3); }
+        .btn-grade.green { background: rgba(34, 197, 94, 0.05); border: 1px solid rgba(34, 197, 94, 0.15); color: #4ade80; }
+        .btn-grade.green:hover { background: #22c55e; color: white; transform: translateY(-3px); box-shadow: 0 10px 25px rgba(34, 197, 94, 0.3); }
+        
+        .key-hint { 
+          width: 36px; height: 36px; background: rgba(255,255,255,0.05); 
+          display: flex; align-items: center; justify-content: center; 
+          border-radius: 10px; font-size: 1.1rem; border: 1px solid rgba(255,255,255,0.05);
+        }
+
+        @media (max-width: 640px) {
+          .study-header { padding: 1rem 1.5rem; }
+          .progress-container { display: none; }
+          .card-arena { padding: 2rem 1rem; align-items: flex-start; }
+          .study-card { min-height: 520px; }
+          .card-face { padding: 2rem 1.5rem; border-radius: 30px; }
+          .question-content h2 { font-size: 1.5rem; }
+          .btn-reveal { margin-top: 1.5rem; }
+        }
+
+      `}</style>
     </div>
   );
 }
-
-// STYLES SECTION - Updated with image support
-const styles = {
-  container: {
-    minHeight: '100vh',
-    minWidth: '100vw',
-    width: '100%',
-    height: '100%',
-    background: 'linear-gradient(135deg, #27374d 0%, #526d82 40%, #9db2bf 70%, #dde6ed 100%)',
-    padding: '0',
-    margin: '0',
-    display: 'flex',
-    flexDirection: 'column',
-    alignItems: 'center',
-    justifyContent: 'center',
-    fontFamily: "'Inter', 'Segoe UI', sans-serif",
-    position: 'fixed',
-    top: '0',
-    left: '0',
-    right: '0',
-    bottom: '0'
-  },
-
-  flashcard: {
-    background: 'rgba(255, 255, 255, 0.95)',
-    backdropFilter: 'blur(15px)',
-    borderRadius: '20px',
-    padding: window.innerWidth <= 480 ? '1.5rem' : window.innerWidth <= 768 ? '2rem' : '2.5rem',
-    maxWidth: window.innerWidth <= 480 ? '340px' : window.innerWidth <= 768 ? '500px' : '600px',
-    width: window.innerWidth <= 480 ? '92%' : window.innerWidth <= 768 ? '90%' : '100%',
-    boxShadow: '0 20px 40px rgba(39, 55, 77, 0.3)',
-    border: '1px solid rgba(255, 255, 255, 0.3)',
-    marginBottom: window.innerWidth <= 480 ? '1rem' : '1.5rem',
-    position: 'relative',
-    margin: '1rem'
-  },
-
-  card: {
-    background: 'rgba(255, 255, 255, 0.95)',
-    padding: window.innerWidth <= 480 ? '2rem' : '2.5rem',
-    borderRadius: '20px',
-    textAlign: 'center',
-    boxShadow: '0 20px 40px rgba(39, 55, 77, 0.3)',
-    maxWidth: window.innerWidth <= 480 ? '320px' : '400px',
-    margin: '1rem'
-  },
-
-  header: {
-    display: 'flex',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: window.innerWidth <= 480 ? '1.2rem' : window.innerWidth <= 768 ? '1.5rem' : '2rem',
-    flexWrap: 'wrap',
-    gap: window.innerWidth <= 480 ? '0.5rem' : '0.8rem'
-  },
-
-  headerItem: {
-    padding: window.innerWidth <= 480 ? '0.6rem 1rem' : window.innerWidth <= 768 ? '0.7rem 1.2rem' : '0.8rem 1.5rem',
-    borderRadius: window.innerWidth <= 480 ? '16px' : '18px',
-    fontSize: window.innerWidth <= 480 ? '0.8rem' : window.innerWidth <= 768 ? '0.9rem' : '1rem',
-    fontWeight: '600',
-    background: 'rgba(157, 178, 191, 0.2)',
-    color: '#526d82',
-    whiteSpace: 'nowrap'
-  },
-
-  badge: {
-    position: 'absolute',
-    top: window.innerWidth <= 480 ? '0.8rem' : '1rem',
-    right: window.innerWidth <= 480 ? '0.8rem' : '1rem',
-    color: 'white',
-    padding: window.innerWidth <= 480 ? '0.4rem 0.8rem' : '0.5rem 1rem',
-    borderRadius: '16px',
-    fontSize: window.innerWidth <= 480 ? '0.7rem' : '0.75rem',
-    fontWeight: '600',
-    textTransform: 'uppercase'
-  },
-
-  cardFront: {
-    background: 'linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%)',
-    borderRadius: '14px',
-    padding: window.innerWidth <= 480 ? '1.5rem' : window.innerWidth <= 768 ? '2rem' : '2.5rem',
-    marginBottom: window.innerWidth <= 480 ? '1.2rem' : '1.5rem',
-    border: '2px solid #dde6ed',
-    minHeight: window.innerWidth <= 480 ? '140px' : window.innerWidth <= 768 ? '160px' : '180px',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    textAlign: 'center'
-  },
-
-  cardBack: {
-    background: 'linear-gradient(135deg, #e8f5e8 0%, #d4edda 100%)',
-    borderRadius: '14px',
-    padding: window.innerWidth <= 480 ? '1.5rem' : window.innerWidth <= 768 ? '2rem' : '2.5rem',
-    marginBottom: window.innerWidth <= 480 ? '1.2rem' : '1.5rem',
-    border: '2px solid #c3e6cb',
-    minHeight: window.innerWidth <= 480 ? '140px' : window.innerWidth <= 768 ? '160px' : '180px',
-    display: 'flex',
-    flexDirection: 'column',
-    justifyContent: 'center',
-    textAlign: 'center'
-  },
-
-  // New styles for split layout
-  splitLayout: {
-    display: 'flex',
-    height: '100%',
-    gap: window.innerWidth <= 480 ? '1rem' : '1.5rem',
-    alignItems: 'center',
-    justifyContent: 'space-between'
-  },
-
-  imageSection: {
-    flex: 1,
-    display: 'flex',
-    justifyContent: 'center',
-    alignItems: 'center',
-    minHeight: window.innerWidth <= 480 ? '100px' : '120px',
-    maxHeight: window.innerWidth <= 480 ? '120px' : '150px'
-  },
-
-  textSection: {
-    flex: 1,
-    display: 'flex',
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: window.innerWidth <= 480 ? '0.5rem' : '1rem'
-  },
-
-  textOnly: {
-    display: 'flex',
-    justifyContent: 'center',
-    alignItems: 'center',
-    height: '100%',
-    padding: window.innerWidth <= 480 ? '1rem' : '1.5rem'
-  },
-
-  questionImage: {
-    maxWidth: '100%',
-    maxHeight: '100%',
-    objectFit: 'contain',
-    borderRadius: '8px',
-    boxShadow: '0 4px 12px rgba(0, 0, 0, 0.15)'
-  },
-
-  imageError: {
-    color: '#6c757d',
-    fontSize: window.innerWidth <= 480 ? '0.8rem' : '0.9rem',
-    textAlign: 'center',
-    fontStyle: 'italic'
-  },
-
-  questionText: {
-    fontSize: window.innerWidth <= 480 ? '1.1rem' : window.innerWidth <= 768 ? '1.2rem' : '1.4rem',
-    fontWeight: '600',
-    color: '#27374d',
-    margin: 0,
-    lineHeight: '1.4'
-  },
-
-  answerText: {
-    fontSize: window.innerWidth <= 480 ? '1rem' : window.innerWidth <= 768 ? '1.1rem' : '1.2rem',
-    fontWeight: '600',
-    color: '#155724',
-    marginBottom: '0.8rem',
-    lineHeight: '1.3'
-  },
-
-  explanation: {
-    fontSize: window.innerWidth <= 480 ? '0.85rem' : '0.9rem',
-    color: '#495057',
-    fontStyle: 'italic',
-    lineHeight: '1.4'
-  },
-
-  buttonGroup: {
-    display: 'flex',
-    gap: window.innerWidth <= 480 ? '0.8rem' : '1rem',
-    justifyContent: 'center',
-    flexWrap: 'wrap'
-  },
-
-  button: {
-    padding: window.innerWidth <= 480 ? '0.8rem 1.4rem' : window.innerWidth <= 768 ? '0.9rem 1.6rem' : '1rem 2rem',
-    border: 'none',
-    borderRadius: '10px',
-    fontSize: window.innerWidth <= 480 ? '0.8rem' : window.innerWidth <= 768 ? '0.85rem' : '0.9rem',
-    fontWeight: '600',
-    cursor: 'pointer',
-    transition: 'all 0.3s ease',
-    background: 'linear-gradient(135deg, #27374d 0%, #526d82 100%)',
-    color: 'white',
-    boxShadow: '0 4px 15px rgba(39, 55, 77, 0.3)',
-    minWidth: window.innerWidth <= 480 ? '100px' : '120px',
-    whiteSpace: 'nowrap'
-  },
-
-  secondaryButton: {
-    padding: window.innerWidth <= 480 ? '0.7rem 1.2rem' : window.innerWidth <= 768 ? '0.8rem 1.4rem' : '0.8rem 1.5rem',
-    border: '2px solid #9db2bf',
-    borderRadius: '10px',
-    fontSize: window.innerWidth <= 480 ? '0.75rem' : window.innerWidth <= 768 ? '0.8rem' : '0.85rem',
-    fontWeight: '600',
-    cursor: 'pointer',
-    transition: 'all 0.3s ease',
-    background: 'rgba(157, 178, 191, 0.3)',
-    color: '#27374d',
-    minWidth: window.innerWidth <= 480 ? '100px' : '120px',
-    whiteSpace: 'nowrap'
-  },
-
-  success: {
-    background: 'linear-gradient(135deg, #28a745 0%, #20c997 100%)',
-    boxShadow: '0 4px 15px rgba(40, 167, 69, 0.3)'
-  },
-
-  danger: {
-    background: 'linear-gradient(135deg, #dc3545 0%, #e74c3c 100%)',
-    boxShadow: '0 4px 15px rgba(220, 53, 69, 0.3)'
-  },
-
-  hint: {
-    background: 'rgba(255, 193, 7, 0.1)',
-    border: '2px solid rgba(255, 193, 7, 0.3)',
-    padding: window.innerWidth <= 480 ? '1rem' : '1.2rem',
-    borderRadius: '10px',
-    marginTop: window.innerWidth <= 480 ? '0.8rem' : '1rem',
-    color: '#856404',
-    fontSize: window.innerWidth <= 480 ? '0.8rem' : '0.9rem'
-  },
-
-  info: {
-    marginTop: window.innerWidth <= 480 ? '0.8rem' : '1rem',
-    padding: window.innerWidth <= 480 ? '0.8rem' : '1rem',
-    background: 'rgba(52, 152, 219, 0.1)',
-    borderRadius: '10px',
-    textAlign: 'center',
-    fontSize: window.innerWidth <= 480 ? '0.8rem' : '0.85rem',
-    color: '#2980b9'
-  },
-
-  progressContainer: {
-    width: '100%',
-    maxWidth: window.innerWidth <= 480 ? '340px' : window.innerWidth <= 768 ? '500px' : '600px',
-    height: window.innerWidth <= 480 ? '6px' : '8px',
-    background: 'rgba(255, 255, 255, 0.3)',
-    borderRadius: '4px',
-    overflow: 'hidden',
-    margin: '0 1rem'
-  },
-
-  progressBar: {
-    height: '100%',
-    background: 'linear-gradient(90deg, #27374d 0%, #526d82 50%, #9db2bf 100%)',
-    transition: 'width 0.3s ease'
-  },
-
-  noQuestionsContainer: {
-    minHeight: '100vh',
-    minWidth: '100vw',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    background: 'linear-gradient(135deg, #27374d 0%, #526d82 40%, #9db2bf 70%, #dde6ed 100%)',
-    fontFamily: "'Inter', 'Segoe UI', sans-serif",
-    position: 'fixed',
-    top: '0',
-    left: '0',
-    right: '0',
-    bottom: '0',
-    margin: '0',
-    padding: '0'
-  }
-};
-
-// Add responsive media query for mobile stacking
-const mobileStyles = window.innerWidth <= 768 ? {
-  splitLayout: {
-    ...styles.splitLayout,
-    flexDirection: 'column',
-    gap: '1rem'
-  },
-  imageSection: {
-    ...styles.imageSection,
-    flex: 'none',
-    maxHeight: '100px'
-  },
-  textSection: {
-    ...styles.textSection,
-    flex: 'none',
-    padding: '0.5rem'
-  }
-} : {};
-
-// Merge mobile styles if on mobile
-Object.assign(styles, mobileStyles);
-
-export default Flashcard;
