@@ -33,6 +33,13 @@ export default function ProfilePage() {
   const [allSubjects, setAllSubjects] = useState([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
+
+  useEffect(() => {
+    const handleResize = () => setIsMobile(window.innerWidth < 768);
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
 
   useEffect(() => {
     const fetchUserProfile = async () => {
@@ -208,28 +215,49 @@ export default function ProfilePage() {
 
                 <div className="analytics-layout-grid">
                   <div className="chart-box-horizontal">
-                    <ResponsiveContainer width="100%" height={400}>
-                      <BarChart data={barData} layout="horizontal" margin={{ top: 20, right: 30, left: 0, bottom: 100 }}>
-                        <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" vertical={false} />
-                        <XAxis
-                          dataKey="name"
-                          stroke="#94a3b8"
-                          fontSize={11}
-                          tick={{ fill: '#94a3b8' }}
-                          tickLine={false}
-                          axisLine={false}
-                          angle={-45}
-                          textAnchor="end"
-                          interval={0}
-                        />
-                        <YAxis
-                          stroke="#64748b"
-                          fontSize={10}
-                          tickLine={false}
-                          axisLine={false}
-                          domain={[0, 100]}
-                          tickFormatter={(v) => `${v}%`}
-                        />
+                    <ResponsiveContainer width="100%" height={isMobile ? 600 : 400}>
+                      <BarChart
+                        data={barData}
+                        layout={isMobile ? "vertical" : "horizontal"}
+                        margin={isMobile ? { top: 5, right: 30, left: 20, bottom: 5 } : { top: 20, right: 30, left: 0, bottom: 100 }}
+                      >
+                        <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" vertical={!isMobile} horizontal={isMobile} />
+                        {isMobile ? (
+                          <>
+                            <XAxis type="number" domain={[0, 100]} hide />
+                            <YAxis
+                              dataKey="name"
+                              type="category"
+                              width={100}
+                              fontSize={10}
+                              tick={{ fill: '#94a3b8' }}
+                              axisLine={false}
+                              tickLine={false}
+                            />
+                          </>
+                        ) : (
+                          <>
+                            <XAxis
+                              dataKey="name"
+                              stroke="#94a3b8"
+                              fontSize={11}
+                              tick={{ fill: '#94a3b8' }}
+                              tickLine={false}
+                              axisLine={false}
+                              angle={-45}
+                              textAnchor="end"
+                              interval={0}
+                            />
+                            <YAxis
+                              stroke="#64748b"
+                              fontSize={10}
+                              tickLine={false}
+                              axisLine={false}
+                              domain={[0, 100]}
+                              tickFormatter={(v) => `${v}%`}
+                            />
+                          </>
+                        )}
                         <Tooltip
                           cursor={{ fill: 'rgba(255,255,255,0.02)' }}
                           contentStyle={{
@@ -237,17 +265,13 @@ export default function ProfilePage() {
                             border: '1px solid rgba(255,255,255,0.1)',
                             borderRadius: '16px',
                             padding: '12px',
-                            color: '#ffffff'
-                          }}
-                          labelStyle={{
                             color: '#ffffff',
-                            fontWeight: '600'
+                            zIndex: 1000
                           }}
-                          itemStyle={{
-                            color: '#ffffff'
-                          }}
+                          labelStyle={{ color: '#ffffff', fontWeight: '600' }}
+                          itemStyle={{ color: '#ffffff' }}
                         />
-                        <Bar dataKey="accuracy" radius={[8, 8, 0, 0]} barSize={28}>
+                        <Bar dataKey="accuracy" radius={isMobile ? [0, 8, 8, 0] : [8, 8, 0, 0]} barSize={isMobile ? 18 : 28}>
                           {barData.map((entry, index) => (
                             <Cell key={`cell-${index}`} fill={entry.fill} />
                           ))}
@@ -766,8 +790,24 @@ export default function ProfilePage() {
         @keyframes spin { to { transform: rotate(360deg); } }
 
         @media (max-width: 900px) {
-          .profile-grid { grid-template-columns: 1fr; }
+          .profile-container { padding: 4rem 1.25rem 2.5rem; }
+          .profile-grid { grid-template-columns: 1fr; gap: 2rem; }
           .stats-sidebar { order: -1; }
+          .hero-header { padding: 2.5rem 1.5rem; text-align: center; border-radius: 28px; }
+          .header-content { flex-direction: column; gap: 1.5rem; }
+          .user-name { font-size: 2.25rem; letter-spacing: -1px; }
+          .stat-summary-row { justify-content: center; flex-wrap: wrap; gap: 1.25rem; }
+          .user-avatar { margin: 0 auto; width: 64px; height: 64px; font-size: 1.5rem; }
+          .sidebar-card { padding: 1.5rem; border-radius: 24px; }
+        }
+
+        @media (max-width: 480px) {
+          .profile-container { padding-top: 5rem; }
+          .hero-header { padding: 2rem 1rem; }
+          .user-name { font-size: 1.85rem; }
+          .tab-nav { padding: 0.4rem; border-radius: 12px; }
+          .tab-btn { padding: 0.6rem 0.8rem; font-size: 0.8rem; }
+          .glass-panel { padding: 1.25rem; }
         }
       `}</style>
     </div >

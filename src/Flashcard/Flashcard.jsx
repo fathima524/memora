@@ -327,11 +327,11 @@ export default function Flashcard() {
 
         .card-arena { 
           flex: 1; display: flex; align-items: flex-start; justify-content: center; 
-          padding: 4rem 2rem; position: relative; z-index: 10;
+          padding: 2rem; position: relative; z-index: 10;
         }
 
         .study-card {
-          width: 100%; max-width: 640px; min-height: 580px; position: relative;
+          width: 100%; max-width: 760px; min-height: 600px; position: relative;
           perspective: 2000px; transform-style: preserve-3d;
         }
 
@@ -339,7 +339,7 @@ export default function Flashcard() {
           position: absolute; width: 100%; height: 100%;
           background: rgba(30, 41, 59, 0.4); backdrop-filter: blur(30px);
           border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 40px;
-          padding: 3rem; display: flex; flex-direction: column;
+          padding: 2rem 2.5rem; display: flex; flex-direction: column;
           backface-visibility: hidden; transition: transform 0.8s cubic-bezier(0.175, 0.885, 0.32, 1.275), box-shadow 0.4s;
           box-shadow: 0 40px 100px -20px rgba(0, 0, 0, 0.6);
           overflow-y: auto;
@@ -354,7 +354,7 @@ export default function Flashcard() {
         .study-card.flipped .back { transform: rotateY(0deg); }
         .back { transform: rotateY(-180deg); }
 
-        .card-meta { display: flex; justify-content: space-between; margin-bottom: 2rem; }
+        .card-meta { display: flex; justify-content: space-between; margin-bottom: 1.25rem; }
         .difficulty-indicator { text-transform: uppercase; font-size: 0.7rem; font-weight: 900; padding: 0.35rem 1rem; border-radius: 8px; letter-spacing: 1px; }
         .difficulty-indicator.easy { background: rgba(34, 197, 94, 0.15); color: #4ade80; border: 1px solid rgba(34, 197, 94, 0.2); }
         .difficulty-indicator.medium { background: rgba(234, 179, 8, 0.15); color: #facc15; border: 1px solid rgba(234, 179, 8, 0.2); }
@@ -362,27 +362,27 @@ export default function Flashcard() {
         .repeat-badge { background: #f97316; color: white; padding: 0.35rem 1rem; border-radius: 8px; font-size: 0.7rem; font-weight: 900; letter-spacing: 1px; }
 
         .question-content { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; }
-        .question-content h2 { font-size: 2rem; line-height: 1.4; font-weight: 800; margin: 0; letter-spacing: -1px; }
-        .q-image-wrapper { margin-bottom: 2rem; width: 100%; max-height: 280px; overflow: hidden; border-radius: 20px; border: 1px solid rgba(255,255,255,0.1); box-shadow: 0 10px 30px rgba(0,0,0,0.3); }
+        .question-content h2 { font-size: 1.7rem; line-height: 1.4; font-weight: 800; margin: 0; letter-spacing: -1px; }
+        .q-image-wrapper { margin-bottom: 1rem; width: 100%; max-height: 260px; overflow: hidden; border-radius: 20px; border: 1px solid rgba(255,255,255,0.1); box-shadow: 0 10px 30px rgba(0,0,0,0.3); }
         .q-image-wrapper img { width: 100%; height: 100%; object-fit: contain; background: rgba(0,0,0,0.2); }
 
         .btn-reveal {
           width: 100%; padding: 1.25rem; background: #2563eb; color: white;
           border: none; border-radius: 18px; font-weight: 800; font-size: 1.15rem;
-          cursor: pointer; margin-top: 2.5rem; transition: 0.3s;
+          cursor: pointer; margin-top: 1.5rem; transition: 0.3s;
           box-shadow: 0 10px 20px -5px rgba(37, 99, 235, 0.4);
           flex-shrink: 0;
         }
         .btn-reveal:hover { background: #1d4ed8; transform: translateY(-3px); box-shadow: 0 20px 35px -5px rgba(37, 99, 235, 0.5); }
 
-        .card-footer-hint { min-height: 60px; display: flex; align-items: center; justify-content: center; margin-top: 1rem; }
+        .card-footer-hint { min-height: 50px; display: flex; align-items: center; justify-content: center; margin-top: 0.5rem; }
         .hint-text { font-style: italic; color: #94a3b8; font-size: 0.9rem; text-align: center; background: rgba(255,255,255,0.03); padding: 0.75rem 1.5rem; border-radius: 12px; }
         .btn-hint-toggle { background: none; border: none; color: #64748b; font-weight: 700; cursor: pointer; font-size: 0.9rem; transition: 0.2s; }
         .btn-hint-toggle:hover { color: #38bdf8; }
 
-        .ans-header { font-size: 0.75rem; font-weight: 900; color: #64748b; letter-spacing: 3px; margin-bottom: 2rem; text-transform: uppercase; }
+        .ans-header { font-size: 0.75rem; font-weight: 900; color: #64748b; letter-spacing: 3px; margin-bottom: 1.25rem; text-transform: uppercase; }
         .answer-content { flex: 1; text-align: center; }
-        .answer-content h3 { font-size: 1.75rem; color: #4ade80; margin-bottom: 2rem; line-height: 1.3; font-weight: 800; }
+        .answer-content h3 { font-size: 1.6rem; color: #4ade80; margin-bottom: 1.25rem; line-height: 1.3; font-weight: 800; }
         
         .explanation-box { background: rgba(15, 23, 42, 0.4); border-radius: 22px; padding: 1.5rem; text-align: left; border: 1px solid rgba(255,255,255,0.05); margin-bottom: 1rem; }
         .explanation-box header { font-weight: 900; font-size: 0.75rem; color: #38bdf8; margin-bottom: 0.75rem; text-transform: uppercase; letter-spacing: 1.5px; }
@@ -405,14 +405,37 @@ export default function Flashcard() {
           border-radius: 10px; font-size: 1.1rem; border: 1px solid rgba(255,255,255,0.05);
         }
 
-        @media (max-width: 640px) {
+        @media (max-width: 768px) {
           .study-header { padding: 1rem 1.5rem; }
-          .progress-container { display: none; }
-          .card-arena { padding: 2rem 1rem; align-items: flex-start; }
-          .study-card { min-height: 520px; }
-          .card-face { padding: 2rem 1.5rem; border-radius: 30px; }
-          .question-content h2 { font-size: 1.5rem; }
-          .btn-reveal { margin-top: 1.5rem; }
+          .subject-tag { display: none; }
+          .progress-container { padding: 0 1.5rem; }
+          .progress-text { font-size: 0.65rem; }
+          .score-badge { padding: 0.4rem 0.8rem; font-size: 0.8rem; }
+          .card-arena { padding: 1.5rem 1rem; }
+          .study-card { min-height: 500px; }
+          .card-face { padding: 1.5rem; border-radius: 24px; }
+          .question-content h2 { font-size: 1.4rem; }
+          .q-image-wrapper { max-height: 220px; }
+          .grading-actions { gap: 1rem; }
+          .btn-grade { padding: 1rem; border-radius: 16px; }
+          .btn-reveal { margin-top: 1.5rem; border-radius: 14px; }
+          .answer-content h3 { font-size: 1.3rem; }
+          .explanation-box { padding: 1rem; }
+        }
+
+        @media (max-width: 480px) {
+          .study-header { padding: 0.75rem 1rem; }
+          .btn-exit { padding: 0.5rem 0.8rem; font-size: 0.8rem; }
+          .progress-container { max-width: 180px; padding: 0 0.5rem; }
+          .card-arena { padding: 1rem 0.75rem; }
+          .study-card { min-height: 480px; }
+          .card-face { padding: 1.25rem; }
+          .question-content h2 { font-size: 1.25rem; }
+          .q-image-wrapper { max-height: 180px; }
+          .grading-actions { gap: 0.75rem; }
+          .btn-grade { font-size: 0.9rem; }
+          .key-hint { display: none; }
+          .ans-header { margin-bottom: 1rem; font-size: 0.65rem; }
         }
 
       `}</style>

@@ -1085,11 +1085,58 @@ export default function Dashboard() {
         }
 
         @media (max-width: 768px) {
-          .command-hero { flex-direction: column; padding: 2rem; text-align: center; }
-          .hero-left { margin-bottom: 2rem; }
-          .hero-stats-row { justify-content: center; }
-          .command-hero h1 { font-size: 2.5rem; }
-          .subject-card-grid { grid-template-columns: 1fr; }
+          .dashboard-page { padding-bottom: 4rem; }
+          .memora-navbar { padding: 0.5rem 1rem; height: 60px; }
+          .command-hero { 
+            flex-direction: column; 
+            padding: 1.5rem 1rem; 
+            text-align: center; 
+            border-radius: 20px; 
+            margin: 1rem;
+            min-height: auto;
+          }
+          .hero-left { margin-bottom: 1.25rem; }
+          .hero-stats-row { justify-content: center; flex-wrap: wrap; gap: 1rem; }
+          .command-hero h1 { font-size: 1.75rem; letter-spacing: -0.5px; }
+          .hero-subtitle { font-size: 0.9rem; margin-bottom: 1.5rem; }
+          
+          .subject-card-grid { 
+            grid-template-columns: 1fr 1fr;
+            gap: 0.75rem; 
+            padding: 0 1rem;
+          }
+          .subject-module-card { height: 160px; border-radius: 20px; padding: 1rem; }
+          .card-content-relative { height: 100%; display: flex; flex-direction: column; justify-content: space-between; }
+          .card-icon-hex { width: 26px; height: 26px; font-size: 0.85rem; }
+          .card-badge { font-size: 0.5rem; padding: 0.1rem 0.4rem; }
+          .subject-module-card h3 { font-size: 0.85rem; margin-top: 0.4rem; line-height: 1.2; }
+          .card-play-btn { width: 22px; height: 22px; }
+          
+          .dashboard-section { margin-bottom: 2rem; padding: 0 1rem; }
+          .panel-section-header { flex-direction: column; gap: 1rem; align-items: stretch; margin-bottom: 1.5rem; }
+          .header-actions { flex-direction: column; gap: 0.75rem; width: 100%; }
+          .search-bar-glass { width: 100% !important; }
+          .difficulty-toggle-compact { width: 100%; justify-content: space-between; }
+          .toggle-btn { flex: 1; text-align: center; }
+          
+          .intel-item { padding: 0.875rem; border-radius: 16px; }
+          .intel-subject { font-size: 0.85rem; }
+          
+          .universal-study { padding: 1.25rem; border-radius: 20px; }
+          .universal-btn { padding: 0.875rem; font-size: 0.95rem; }
+          
+          .hero-right { display: none; } /* Hide heavy hologram on mobile */
+          .command-hero { min-height: auto; }
+        }
+
+        @media (max-width: 480px) {
+          .command-hero h1 { font-size: 1.5rem; }
+          .stat-card { padding: 0.75rem; border-radius: 12px; }
+          .stat-val { font-size: 1.1rem; }
+          .stat-lab { font-size: 0.6rem; }
+          .difficulty-grid-universal { grid-template-columns: 1fr; }
+          .univ-diff-btn { padding: 0.65rem; }
+          .dashboard-grid-system { padding: 0 1rem; }
         }
       `}</style>
     </div>

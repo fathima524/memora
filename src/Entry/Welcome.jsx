@@ -179,9 +179,6 @@ export default function Welcome() {
                     <h3>{currentCard.question}</h3>
                     <div className="card-action">Tap to reveal answer</div>
                   </div>
-                  <div className="card-footer">
-                    <span>Click to flip</span>
-                  </div>
                 </div>
                 {/* Back */}
                 <div className="glass-card-back">
@@ -650,10 +647,13 @@ export default function Welcome() {
         }
 
         /* Mobile Responsive */
+        /* Mobile Responsive */
         @media (max-width: 1024px) {
+          .nav-container { padding: 0 1.5rem; }
           .hero-content {
             grid-template-columns: 1fr;
             text-align: center;
+            gap: 3rem;
           }
           .hero-text {
             display: flex;
@@ -665,17 +665,39 @@ export default function Welcome() {
             margin-right: auto;
           }
           .hero-title {
-            font-size: 3rem;
+            font-size: 3.5rem;
           }
           .features-grid {
             grid-template-columns: repeat(2, 1fr);
           }
         }
 
-        @media (max-width: 640px) {
+        @media (max-width: 768px) {
+          .nav { height: 70px; }
+          .nav-container { padding: 0 1rem; }
+          .logo-text { font-size: 1.1rem; }
+          .logo-icon { font-size: 1.25rem; }
+          .nav-links { gap: 0.75rem; }
+          .nav-link { font-size: 0.85rem; }
+          .nav-cta { padding: 0.5rem 1rem; font-size: 0.85rem; }
+          
+          .hero { padding-top: 100px; padding-bottom: 40px; }
+          .hero-title { font-size: 2.25rem; line-height: 1.2; }
+          .hero-subtitle { font-size: 1rem; line-height: 1.5; margin-bottom: 2rem; }
+          .glass-card-container { height: 260px; }
+          .card-body h3 { font-size: 1.15rem; }
+          .features { padding: 40px 1.25rem; }
+          .section-title { font-size: 1.75rem; }
+        }
+
+        @media (max-width: 480px) {
+          .nav-container { padding: 0 0.75rem; }
+          .logo-text { display: none; }
           .hero-title {
-            font-size: 2.5rem;
+            font-size: 2rem;
+            letter-spacing: -0.5px;
           }
+          .hero-subtitle { font-size: 0.95rem; }
           .features-grid {
             grid-template-columns: 1fr;
           }
@@ -683,9 +705,15 @@ export default function Welcome() {
             flex-direction: column;
             width: 100%;
           }
-          .btn-primary, .btn-secondary {
+          .btn-primary {
+            width: 100%;
             text-align: center;
+            padding: 0.875rem;
           }
+          .glass-card-container { max-width: 100%; height: 240px; }
+          .glass-card-front, .glass-card-back { padding: 1.25rem; }
+          .card-header { margin-bottom: 0.75rem; }
+          .feature-card { padding: 1.25rem; }
         }
       `}</style>
     </div >
