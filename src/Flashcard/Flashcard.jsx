@@ -232,15 +232,18 @@ export default function Flashcard() {
     }
 
     // If they exit immediately without doing anything, or they haven't answered any NEW cards since last save/resume
-    if (isManualExit && (newQuestionsInThisSitting === 0)) {
-      navigate("/dashboard", { state: { sessionSaved: true } });
+    if (newQuestionsInThisSitting === 0) {
+      navigate("/dashboard", {
+        state: { sessionSaved: isManualExit, completedSession: !isManualExit },
+        replace: true
+      });
       return;
     }
 
     // Update Profile Stats
     const { data: profile } = await supabase.from("profiles").select("*").eq("id", user.id).single();
     if (!profile) {
-      navigate("/dashboard", { state: { sessionSaved: isManualExit } });
+      navigate("/dashboard", { state: { sessionSaved: isManualExit }, replace: true });
       return;
     }
 
@@ -260,20 +263,18 @@ export default function Flashcard() {
 
     // Prepare Activity Log - ONLY if questions were actually answered
     let activity = profile.recent_activity || [];
-    if (newQuestionsInThisSitting > 0) {
-      const subName = Array.isArray(subject)
-        ? "Challenge Mode"
-        : subjects.find(s => s.id === subject)?.name || (subject === "mixed" ? "Mixed Study" : "Study Session");
+    const subName = Array.isArray(subject)
+      ? "Challenge Mode"
+      : subjects.find(s => s.id === subject)?.name || (subject === "mixed" ? "Mixed Study" : "Study Session");
 
-      const newEntry = {
-        subject: subName,
-        questions: newQuestionsInThisSitting,
-        score: isManualExit ? 0 : score,
-        accuracy: Math.round((score / (totalAnsweredAtThisPoint || 1)) * 100),
-        timestamp: new Date().toISOString()
-      };
-      activity = [newEntry, ...activity].slice(0, 10);
-    }
+    const newEntry = {
+      subject: subName,
+      questions: newQuestionsInThisSitting,
+      score: isManualExit ? 0 : score,
+      accuracy: Math.round((score / (totalAnsweredAtThisPoint || 1)) * 100),
+      timestamp: new Date().toISOString()
+    };
+    activity = [newEntry, ...activity].slice(0, 10);
 
     await supabase.from("profiles").update({
       current_streak: newStreak,
@@ -288,7 +289,8 @@ export default function Flashcard() {
         sessionSaved: isManualExit,
         completedSession: !isManualExit,
         questionsCounted: newQuestionsInThisSitting
-      }
+      },
+      replace: true
     });
   };
 
