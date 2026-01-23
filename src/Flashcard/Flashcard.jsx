@@ -231,14 +231,10 @@ export default function Flashcard() {
       localStorage.removeItem(sessionKey);
     }
 
-    // If they exit immediately without doing anything, just go back
-    if (newQuestionsInThisSitting === 0 && isManualExit) {
-      if (totalAnsweredAtThisPoint === 0) {
-        navigate("/dashboard");
-        return;
-      }
-      // If they already answererd some but didn't answer anything NEW since resume, 
-      // we still need to navigate but maybe no DB update is needed.
+    // If they exit immediately without doing anything, or they haven't answered any NEW cards since last save/resume
+    if (isManualExit && (newQuestionsInThisSitting === 0)) {
+      navigate("/dashboard");
+      return;
     }
 
     // Update Profile Stats
