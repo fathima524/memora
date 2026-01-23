@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { supabase } from "../supabase/supabaseClient";
+import { Clock } from "lucide-react";
 
 export default function Flashcard() {
   const navigate = useNavigate();
@@ -18,21 +19,26 @@ export default function Flashcard() {
   const [subjects, setSubjects] = useState([]);
   const [sessionComplete, setSessionComplete] = useState(false);
   const [spacedQueue, setSpacedQueue] = useState([]);
+  const [showResumeModal, setShowResumeModal] = useState(false);
+  const [resumeData, setResumeData] = useState(null);
 
   // SRS Configuration
   const SRS_RULES = {
-    correct: { easy: 15, medium: 10, hard: 5 },
-    incorrect: { easy: 3, medium: 2, hard: 1 }
+    correct: { easy: 25, medium: 20, hard: 18 },
+    incorrect: {
+      easy: { once: 15, twicePlus: 12 },
+      medium: { once: 12, twicePlus: 8 },
+      hard: { once: 10, twicePlus: 5 }
+    }
   };
 
   useEffect(() => {
     const initSession = async () => {
-      // 1. Get User
+      // ... (rest of the logic stays the same)
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) { navigate("/login"); return; }
       setUser(user);
 
-      // 2. Get Profile & Subjects
       const [profileRes, subjectsRes] = await Promise.all([
         supabase.from("profiles").select("*").eq("id", user.id).single(),
         supabase.from("subjects").select("*")
@@ -41,7 +47,17 @@ export default function Flashcard() {
       if (profileRes.data) setStreak(profileRes.data.current_streak || 0);
       if (subjectsRes.data) setSubjects(subjectsRes.data);
 
-      // 3. Get Questions
+      const sessionKey = `memora_session_${subject}_${difficulty}`;
+      const savedSession = localStorage.getItem(sessionKey);
+
+      if (savedSession) {
+        const parsed = JSON.parse(savedSession);
+        setResumeData(parsed);
+        setShowResumeModal(true);
+        setLoading(false);
+        return;
+      }
+
       let query = supabase.from("flashcards").select("*");
       if (mode === "challenge") {
         if (Array.isArray(subject)) query = query.in("subject_id", subject);
@@ -49,7 +65,7 @@ export default function Flashcard() {
         query = query.eq("subject_id", subject);
       }
 
-      if (difficulty && difficulty !== "mixed" && difficulty !== "mixed") {
+      if (difficulty && difficulty !== "mixed") {
         query = query.eq("difficulty", difficulty);
       }
 
@@ -59,7 +75,9 @@ export default function Flashcard() {
         return;
       }
 
-      setQuestions(shuffle(qs));
+      // Explicitly clean fresh questions to ensure no phantom properties
+      const cleaned = qs.map(q => ({ ...q, _isRepeat: false, _wrongCount: 0 }));
+      setQuestions(shuffle(cleaned));
       setLoading(false);
     };
 
@@ -79,13 +97,24 @@ export default function Flashcard() {
 
     // Spaced Repetition Logic
     const diff = currentQ.difficulty?.toLowerCase() || 'medium';
-    const interval = SRS_RULES[isCorrect ? 'correct' : 'incorrect'][diff] || 5;
+    let interval;
+    let newWrongCount = currentQ._wrongCount || 0;
 
-    // If incorrect or first time correct, re-queue
+    if (isCorrect) {
+      interval = SRS_RULES.correct[diff] || 20;
+    } else {
+      newWrongCount += 1;
+      const stage = newWrongCount === 1 ? 'once' : 'twicePlus';
+      interval = SRS_RULES.incorrect[diff][stage] || 10;
+    }
+
+    // If incorrect or first time correct (reinforcement), re-queue
     if (!isCorrect || !currentQ._isRepeat) {
       setSpacedQueue(prev => [...prev, {
         ...currentQ,
         _isRepeat: true,
+        _wrongCount: newWrongCount, // Pass the incremented count
+        _wasWrong: !isCorrect,
         _reappearAt: currentIdx + interval
       }]);
     }
@@ -96,17 +125,33 @@ export default function Flashcard() {
   const moveToNext = () => {
     const nextIdx = currentIdx + 1;
 
-    // Check if any question from SRS queue is ready
-    const readyFromQueue = spacedQueue.find(q => q._reappearAt <= nextIdx);
+    // 1. Sort the queue by urgency (_reappearAt) and priority (Mistakes first)
+    const sortedQueue = [...spacedQueue].sort((a, b) => {
+      // Primary: Show cards that were due earliest first
+      if (a._reappearAt !== b._reappearAt) return a._reappearAt - b._reappearAt;
+      // Secondary: If due at the same time, prioritize Mistakes over Reinforcement
+      if (a._wasWrong !== b._wasWrong) return b._wasWrong - a._wasWrong;
+      return 0;
+    });
 
-    if (readyFromQueue) {
-      // Injected from queue
+    // 2. Check if any question from SRS queue is ready (Interval achieved)
+    const readyFromQueue = sortedQueue.find(q => q._reappearAt <= nextIdx);
+
+    // 3. Check if we have reached the end of the actual deck but still have items in queue
+    const isAtEnd = nextIdx >= questions.length;
+    const forceFromQueue = isAtEnd && sortedQueue.length > 0 ? sortedQueue[0] : null;
+
+    const itemToInfect = readyFromQueue || forceFromQueue;
+
+    if (itemToInfect) {
+      // Injected from queue (either naturally or forced because session is ending)
       setQuestions(prev => {
         const newQs = [...prev];
-        newQs.splice(nextIdx, 0, readyFromQueue);
+        newQs.splice(nextIdx, 0, itemToInfect);
         return newQs;
       });
-      setSpacedQueue(prev => prev.filter(q => q.id !== readyFromQueue.id));
+      // Remove specific instance from queue
+      setSpacedQueue(prev => prev.filter(q => !(q.id === itemToInfect.id && q._reappearAt === itemToInfect._reappearAt)));
       proceed(nextIdx);
     } else if (nextIdx < questions.length) {
       proceed(nextIdx);
@@ -121,45 +166,130 @@ export default function Flashcard() {
     setShowHint(false);
   };
 
-  const saveAndExit = async () => {
+  const handleResume = () => {
+    if (!resumeData) return;
+    setQuestions(resumeData.questions);
+    setCurrentIdx(resumeData.currentIdx);
+    setScore(resumeData.score);
+    // Restore the mistake bucket state
+    setSpacedQueue(resumeData.spacedQueue || []);
+    setShowResumeModal(false);
+  };
+
+  const handleStartFresh = async () => {
+    const sessionKey = `memora_session_${subject}_${difficulty}`;
+    localStorage.removeItem(sessionKey);
+    setShowResumeModal(false);
+    setLoading(true);
+
+    // Fetch fresh questions
+    let query = supabase.from("flashcards").select("*");
+    if (mode === "challenge") {
+      if (Array.isArray(subject)) query = query.in("subject_id", subject);
+    } else if (subject && subject !== "mixed") {
+      query = query.eq("subject_id", subject);
+    }
+
+    if (difficulty && difficulty !== "mixed") {
+      query = query.eq("difficulty", difficulty);
+    }
+
+    const { data: qs, error } = await query;
+    if (!error && qs?.length) {
+      setQuestions(shuffle(qs));
+    }
+    setLoading(false);
+  };
+
+  const saveAndExit = async (isManualExit = false) => {
     if (!user) return;
 
-    // Fetch latest profile state
+    // Determine how many NEW questions were answered in this sitting
+    // If resuming, we only want to add the difference
+    const totalAnsweredAtThisPoint = isManualExit ? currentIdx : questions.length;
+    const previouslyCounted = resumeData?.currentIdx || 0;
+    const newQuestionsInThisSitting = Math.max(0, totalAnsweredAtThisPoint - previouslyCounted);
+
+    const sessionKey = `memora_session_${subject}_${difficulty}`;
+
+    // If exiting early, save state for resume
+    if (isManualExit && totalAnsweredAtThisPoint > 0 && totalAnsweredAtThisPoint < questions.length) {
+      const sessionState = {
+        questions,
+        currentIdx: totalAnsweredAtThisPoint,
+        score,
+        subject,
+        difficulty,
+        subjectName: Array.isArray(subject)
+          ? "Challenge Mode"
+          : subjects.find(s => s.id === subject)?.name || "Study Session",
+        spacedQueue,
+        timestamp: Date.now()
+      };
+      localStorage.setItem(sessionKey, JSON.stringify(sessionState));
+    } else {
+      localStorage.removeItem(sessionKey);
+    }
+
+    // If they exit immediately without doing anything, just go back
+    if (newQuestionsInThisSitting === 0 && isManualExit) {
+      if (totalAnsweredAtThisPoint === 0) {
+        navigate("/dashboard");
+        return;
+      }
+      // If they already answererd some but didn't answer anything NEW since resume, 
+      // we still need to navigate but maybe no DB update is needed.
+    }
+
+    // Update Profile Stats
     const { data: profile } = await supabase.from("profiles").select("*").eq("id", user.id).single();
+    if (!profile) {
+      navigate("/dashboard");
+      return;
+    }
 
     const today = new Date().toDateString();
-    const lastDate = profile?.last_study_date ? new Date(profile.last_study_date).toDateString() : null;
+    const lastDate = profile.last_study_date ? new Date(profile.last_study_date).toDateString() : null;
 
-    let newStreak = profile?.current_streak || 0;
-    let newTodayQs = profile?.questions_today || 0;
+    let newStreak = profile.current_streak || 0;
+    let newTodayQs = profile.questions_today || 0;
 
     if (lastDate === today) {
-      newTodayQs += questions.length;
+      newTodayQs += newQuestionsInThisSitting;
     } else {
-      newTodayQs = questions.length;
+      newTodayQs = newQuestionsInThisSitting;
       const yesterday = new Date(Date.now() - 86400000).toDateString();
       newStreak = lastDate === yesterday ? newStreak + 1 : 1;
     }
 
     // Prepare Activity Log
-    const subName = subjects.find(s => s.id === subject)?.name || "Mixed Study";
+    const subName = Array.isArray(subject)
+      ? "Challenge Mode"
+      : subjects.find(s => s.id === subject)?.name || (subject === "mixed" ? "Mixed Study" : "Study Session");
+
     const activity = [{
       subject: subName,
-      questions: questions.length,
-      score: score,
-      accuracy: Math.round((score / questions.length) * 100),
+      questions: newQuestionsInThisSitting,
+      score: isManualExit ? 0 : score, // Only log score if finished, or refine how partial score is logged
+      accuracy: newQuestionsInThisSitting > 0 ? Math.round((score / totalAnsweredAtThisPoint) * 100) : 0,
       timestamp: new Date().toISOString()
-    }, ...(profile?.recent_activity || [])].slice(0, 10);
+    }, ...(profile.recent_activity || [])].slice(0, 10);
 
     await supabase.from("profiles").update({
       current_streak: newStreak,
       questions_today: newTodayQs,
       last_study_date: new Date().toISOString(),
       recent_activity: activity,
-      longest_streak: Math.max(newStreak, profile?.longest_streak || 0)
+      longest_streak: Math.max(newStreak, profile.longest_streak || 0)
     }).eq("id", user.id);
 
-    navigate("/dashboard", { state: { completedSession: true } });
+    navigate("/dashboard", {
+      state: {
+        sessionSaved: isManualExit,
+        completedSession: !isManualExit,
+        questionsCounted: newQuestionsInThisSitting
+      }
+    });
   };
 
   if (loading) return (
@@ -173,6 +303,67 @@ export default function Flashcard() {
         }
         .loader-ring { width: 50px; height: 50px; border: 4px solid rgba(255,255,255,0.1); border-top-color: #38bdf8; border-radius: 50%; animation: spin 1s linear infinite; }
         @keyframes spin { to { transform: rotate(360deg); } }
+      `}</style>
+    </div>
+  );
+
+  if (showResumeModal && resumeData) return (
+    <div className="resume-modal-overlay">
+      <div className="resume-card">
+        <div className="resume-icon-wrap">
+          <Clock size={48} className="rotate-icon" />
+        </div>
+        <h2>Resume Session?</h2>
+        <p>You have an unfinished <strong>{resumeData.subjectName}</strong> session from earlier.</p>
+
+        <div className="resume-stats">
+          <div className="r-stat">
+            <span>Progress</span>
+            <strong>Card {resumeData.currentIdx + 1} of {resumeData.questions.length}</strong>
+          </div>
+          <div className="r-stat">
+            <span>Score</span>
+            <strong>{resumeData.score}</strong>
+          </div>
+        </div>
+
+        <div className="resume-actions">
+          <button onClick={handleResume} className="btn-resume-primary">
+            Resume Study
+          </button>
+          <button onClick={handleStartFresh} className="btn-resume-secondary">
+            Start Fresh
+          </button>
+        </div>
+      </div>
+      <style>{`
+        .resume-modal-overlay {
+          height: 100vh; background: #0f172a; display: flex; align-items: center; justify-content: center;
+          padding: 2rem; color: white; font-family: 'Plus Jakarta Sans', sans-serif;
+          position: relative; overflow: hidden;
+        }
+        .resume-card {
+          background: rgba(30, 41, 59, 0.7); backdrop-filter: blur(30px); border: 1px solid rgba(255,255,255,0.1);
+          padding: 3rem 2.5rem; border-radius: 40px; text-align: center; width: 100%; max-width: 480px;
+          z-index: 10; box-shadow: 0 40px 100px -20px rgba(0,0,0,0.7);
+          animation: modalPop 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+        @keyframes modalPop { from { transform: scale(0.9) translateY(20px); opacity: 0; } to { transform: scale(1) translateY(0); opacity: 1; } }
+        .resume-icon-wrap { width: 100px; height: 100px; background: rgba(37, 99, 235, 0.1); border-radius: 30px; display: flex; align-items: center; justify-content: center; margin: 0 auto 2rem; color: #38bdf8; }
+        .rotate-icon { animation: clockRotate 10s linear infinite; }
+        @keyframes clockRotate { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+        .resume-card h2 { font-size: 2rem; font-weight: 800; margin-bottom: 0.5rem; letter-spacing: -1px; }
+        .resume-card p { color: #94a3b8; font-size: 1.1rem; line-height: 1.6; margin-bottom: 2rem; }
+        .resume-card strong { color: #f8fafc; }
+        .resume-stats { display: flex; justify-content: space-between; background: rgba(0,0,0,0.2); padding: 1.5rem; border-radius: 20px; margin-bottom: 2.5rem; }
+        .r-stat { display: flex; flex-direction: column; gap: 0.4rem; text-align: left; }
+        .r-stat span { font-size: 0.75rem; text-transform: uppercase; font-weight: 700; color: #64748b; letter-spacing: 1px; }
+        .r-stat strong { font-size: 1rem; color: #38bdf8; }
+        .resume-actions { display: flex; flex-direction: column; gap: 1rem; }
+        .btn-resume-primary { width: 100%; padding: 1.25rem; background: #2563eb; color: white; border: none; border-radius: 18px; font-weight: 800; font-size: 1.1rem; cursor: pointer; transition: 0.3s; box-shadow: 0 10px 20px rgba(37, 99, 235, 0.3); }
+        .btn-resume-primary:hover { background: #1d4ed8; transform: translateY(-3px); box-shadow: 0 15px 30px rgba(37, 99, 235, 0.4); }
+        .btn-resume-secondary { width: 100%; padding: 1.1rem; background: rgba(255,255,255,0.03); color: #94a3b8; border: 1px solid rgba(255,255,255,0.08); border-radius: 18px; font-weight: 700; cursor: pointer; transition: 0.2s; }
+        .btn-resume-secondary:hover { background: rgba(239, 68, 68, 0.05); color: #f87171; border-color: rgba(239, 68, 68, 0.1); }
       `}</style>
     </div>
   );
@@ -221,7 +412,7 @@ export default function Flashcard() {
       {/* Session Progress Header */}
       <header className="study-header">
         <div className="header-left">
-          <button onClick={() => navigate("/dashboard")} className="btn-exit">✕ Exit</button>
+          <button onClick={() => saveAndExit(true)} className="btn-exit">✕ Exit</button>
           <span className="subject-tag">{subjects.find(s => s.id === subject)?.name || "MBBS Revision"}</span>
         </div>
         <div className="progress-container">
@@ -240,7 +431,11 @@ export default function Flashcard() {
           <div className="card-face front">
             <div className="card-meta">
               <span className={`difficulty-indicator ${currentQ.difficulty}`}>{currentQ.difficulty}</span>
-              {currentQ._isRepeat && <span className="repeat-badge">Needs Practice</span>}
+              {currentQ._isRepeat && (
+                <span className={`repeat-badge ${currentQ._wasWrong ? 'wrong' : 'reinforce'}`}>
+                  {currentQ._wasWrong ? 'Needs Practice' : 'Consolidating Concept'}
+                </span>
+              )}
             </div>
 
             <div className="question-content">
@@ -297,8 +492,8 @@ export default function Flashcard() {
           position: absolute;
           top: 0; left: 0; right: 0; bottom: 0;
           background: 
-            radial-gradient(circle at 100% 0%, rgba(37, 99, 235, 0.1) 0%, transparent 40%),
-            radial-gradient(circle at 0% 100%, rgba(56, 189, 248, 0.05) 0%, transparent 40%);
+          radial-gradient(circle at 100% 0%, rgba(37, 99, 235, 0.1) 0%, transparent 40%),
+          radial-gradient(circle at 0% 100%, rgba(56, 189, 248, 0.05) 0%, transparent 40%);
           z-index: 0;
           pointer-events: none;
         }
@@ -359,7 +554,10 @@ export default function Flashcard() {
         .difficulty-indicator.easy { background: rgba(34, 197, 94, 0.15); color: #4ade80; border: 1px solid rgba(34, 197, 94, 0.2); }
         .difficulty-indicator.medium { background: rgba(234, 179, 8, 0.15); color: #facc15; border: 1px solid rgba(234, 179, 8, 0.2); }
         .difficulty-indicator.hard { background: rgba(239, 68, 68, 0.15); color: #f87171; border: 1px solid rgba(239, 68, 68, 0.2); }
-        .repeat-badge { background: #f97316; color: white; padding: 0.35rem 1rem; border-radius: 8px; font-size: 0.7rem; font-weight: 900; letter-spacing: 1px; }
+        
+        .repeat-badge { padding: 0.35rem 1rem; border-radius: 8px; font-size: 0.7rem; font-weight: 900; letter-spacing: 1px; }
+        .repeat-badge.wrong { background: #f97316; color: white; }
+        .repeat-badge.reinforce { background: #8b5cf6; color: white; }
 
         .question-content { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; }
         .question-content h2 { font-size: 1.7rem; line-height: 1.4; font-weight: 800; margin: 0; letter-spacing: -1px; }
