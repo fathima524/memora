@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import Navbar from "../Reuseable/Navbar";
 import Footer from "../Reuseable/Footer";
 import { supabase } from "../supabase/supabaseClient";
@@ -46,6 +46,24 @@ export default function Dashboard() {
   const [selectedChallengeSubjects, setSelectedChallengeSubjects] = useState([]);
   const [searchQuery, setSearchQuery] = useState("");
   const [universalDifficulty, setUniversalDifficulty] = useState("mixed");
+
+  const location = useLocation();
+  const [showToast, setShowToast] = useState(false);
+  const [toastMessage, setToastMessage] = useState("");
+
+  useEffect(() => {
+    if (location.state?.sessionSaved) {
+      setToastMessage("Progress Saved! Take a break and resume anytime.");
+      setShowToast(true);
+      const timer = setTimeout(() => setShowToast(false), 4000);
+      return () => clearTimeout(timer);
+    } else if (location.state?.completedSession) {
+      setToastMessage("Session Completed! Your stats have been updated.");
+      setShowToast(true);
+      const timer = setTimeout(() => setShowToast(false), 4000);
+      return () => clearTimeout(timer);
+    }
+  }, [location.state]);
 
   useEffect(() => {
     const fetchUserAndProfile = async () => {
@@ -197,6 +215,13 @@ export default function Dashboard() {
     <div className="dashboard-page">
       <div className="auth-mesh"></div>
       <Navbar />
+
+      {showToast && (
+        <div className="save-toast">
+          <Zap size={18} className="toast-icon" />
+          <span>{toastMessage}</span>
+        </div>
+      )}
 
       <main className="dashboard-main">
         {/* Futuristic Hero Section */}
@@ -459,15 +484,18 @@ export default function Dashboard() {
               </div>
               <div className="intel-list">
                 {recentActivity.length > 0 ? (
-                  recentActivity.slice(0, 4).map((activity, index) => (
-                    <div key={index} className="intel-item">
-                      <div className="intel-icon">⚡</div>
-                      <div className="intel-data">
-                        <span className="intel-subject">{activity.subject}</span>
-                        <span className="intel-meta">{activity.questions} cards • {new Date(activity.timestamp).toLocaleDateString([], { month: 'short', day: 'numeric' })}</span>
+                  recentActivity
+                    .filter(activity => (activity.questions || 0) > 0)
+                    .slice(0, 4)
+                    .map((activity, index) => (
+                      <div key={index} className="intel-item">
+                        <div className="intel-icon">⚡</div>
+                        <div className="intel-data">
+                          <span className="intel-subject">{activity.subject}</span>
+                          <span className="intel-meta">{activity.questions} cards • {new Date(activity.timestamp).toLocaleDateString([], { month: 'short', day: 'numeric' })}</span>
+                        </div>
                       </div>
-                    </div>
-                  ))
+                    ))
                 ) : (
                   <div className="intel-empty">
                     <p>Start a mission to build history.</p>
@@ -1138,6 +1166,17 @@ export default function Dashboard() {
           .univ-diff-btn { padding: 0.65rem; }
           .dashboard-grid-system { padding: 0 1rem; }
         }
+        .save-toast {
+          position: fixed; top: 2rem; left: 50%; transform: translateX(-50%);
+          background: rgba(30, 41, 59, 0.95); backdrop-filter: blur(20px);
+          border: 1px solid rgba(34, 197, 94, 0.3); padding: 1rem 2rem;
+          border-radius: 20px; color: #4ade80; font-weight: 700;
+          display: flex; align-items: center; gap: 0.75rem; z-index: 9999;
+          box-shadow: 0 20px 50px rgba(0,0,0,0.5);
+          animation: toastIn 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+        @keyframes toastIn { from { transform: translate(-50%, -20px); opacity: 0; } to { transform: translate(-50%, 0); opacity: 1; } }
+        .toast-icon { color: #facc15; }
       `}</style>
     </div>
   );

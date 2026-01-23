@@ -258,18 +258,22 @@ export default function Flashcard() {
       newStreak = lastDate === yesterday ? newStreak + 1 : 1;
     }
 
-    // Prepare Activity Log
-    const subName = Array.isArray(subject)
-      ? "Challenge Mode"
-      : subjects.find(s => s.id === subject)?.name || (subject === "mixed" ? "Mixed Study" : "Study Session");
+    // Prepare Activity Log - ONLY if questions were actually answered
+    let activity = profile.recent_activity || [];
+    if (newQuestionsInThisSitting > 0) {
+      const subName = Array.isArray(subject)
+        ? "Challenge Mode"
+        : subjects.find(s => s.id === subject)?.name || (subject === "mixed" ? "Mixed Study" : "Study Session");
 
-    const activity = [{
-      subject: subName,
-      questions: newQuestionsInThisSitting,
-      score: isManualExit ? 0 : score, // Only log score if finished, or refine how partial score is logged
-      accuracy: newQuestionsInThisSitting > 0 ? Math.round((score / totalAnsweredAtThisPoint) * 100) : 0,
-      timestamp: new Date().toISOString()
-    }, ...(profile.recent_activity || [])].slice(0, 10);
+      const newEntry = {
+        subject: subName,
+        questions: newQuestionsInThisSitting,
+        score: isManualExit ? 0 : score,
+        accuracy: Math.round((score / (totalAnsweredAtThisPoint || 1)) * 100),
+        timestamp: new Date().toISOString()
+      };
+      activity = [newEntry, ...activity].slice(0, 10);
+    }
 
     await supabase.from("profiles").update({
       current_streak: newStreak,
