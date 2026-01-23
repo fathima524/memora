@@ -65,6 +65,16 @@
                 "object_type": "COLUMN",
                 "table_schema": "public",
                 "table_name": "profiles",
+                "column_name": "id",
+                "data_type": "uuid",
+                "is_nullable": "NO",
+                "policy_name": null,
+                "policy_definition": null
+            },
+            {
+                "object_type": "COLUMN",
+                "table_schema": "public",
+                "table_name": "profiles",
                 "column_name": "profile_completed",
                 "data_type": "boolean",
                 "is_nullable": "YES",
@@ -224,16 +234,6 @@
             {
                 "object_type": "COLUMN",
                 "table_schema": "public",
-                "table_name": "profiles",
-                "column_name": "id",
-                "data_type": "uuid",
-                "is_nullable": "NO",
-                "policy_name": null,
-                "policy_definition": null
-            },
-            {
-                "object_type": "COLUMN",
-                "table_schema": "public",
                 "table_name": "activities",
                 "column_name": "action",
                 "data_type": "text",
@@ -275,9 +275,9 @@
                 "object_type": "COLUMN",
                 "table_schema": "public",
                 "table_name": "flashcards",
-                "column_name": "subject_name",
+                "column_name": "question",
                 "data_type": "text",
-                "is_nullable": "YES",
+                "is_nullable": "NO",
                 "policy_name": null,
                 "policy_definition": null
             },
@@ -285,9 +285,9 @@
                 "object_type": "COLUMN",
                 "table_schema": "public",
                 "table_name": "flashcards",
-                "column_name": "image_url",
+                "column_name": "correct",
                 "data_type": "text",
-                "is_nullable": "YES",
+                "is_nullable": "NO",
                 "policy_name": null,
                 "policy_definition": null
             },
@@ -315,17 +315,7 @@
                 "object_type": "COLUMN",
                 "table_schema": "public",
                 "table_name": "flashcards",
-                "column_name": "question",
-                "data_type": "text",
-                "is_nullable": "NO",
-                "policy_name": null,
-                "policy_definition": null
-            },
-            {
-                "object_type": "COLUMN",
-                "table_schema": "public",
-                "table_name": "profiles",
-                "column_name": "role",
+                "column_name": "difficulty",
                 "data_type": "text",
                 "is_nullable": "YES",
                 "policy_name": null,
@@ -334,18 +324,8 @@
             {
                 "object_type": "COLUMN",
                 "table_schema": "public",
-                "table_name": "flashcards",
-                "column_name": "correct",
-                "data_type": "text",
-                "is_nullable": "NO",
-                "policy_name": null,
-                "policy_definition": null
-            },
-            {
-                "object_type": "COLUMN",
-                "table_schema": "public",
                 "table_name": "profiles",
-                "column_name": "email",
+                "column_name": "role",
                 "data_type": "text",
                 "is_nullable": "YES",
                 "policy_name": null,
@@ -364,8 +344,8 @@
             {
                 "object_type": "COLUMN",
                 "table_schema": "public",
-                "table_name": "flashcards",
-                "column_name": "difficulty",
+                "table_name": "profiles",
+                "column_name": "email",
                 "data_type": "text",
                 "is_nullable": "YES",
                 "policy_name": null,
@@ -382,6 +362,36 @@
                 "policy_definition": null
             },
             {
+                "object_type": "COLUMN",
+                "table_schema": "public",
+                "table_name": "flashcards",
+                "column_name": "image_url",
+                "data_type": "text",
+                "is_nullable": "YES",
+                "policy_name": null,
+                "policy_definition": null
+            },
+            {
+                "object_type": "COLUMN",
+                "table_schema": "public",
+                "table_name": "flashcards",
+                "column_name": "answer_image_url",
+                "data_type": "text",
+                "is_nullable": "YES",
+                "policy_name": null,
+                "policy_definition": null
+            },
+            {
+                "object_type": "COLUMN",
+                "table_schema": "public",
+                "table_name": "flashcards",
+                "column_name": "subject_name",
+                "data_type": "text",
+                "is_nullable": "YES",
+                "policy_name": null,
+                "policy_definition": null
+            },
+            {
                 "object_type": "POLICY",
                 "table_schema": "public",
                 "table_name": "profiles",
@@ -389,7 +399,7 @@
                 "data_type": null,
                 "is_nullable": null,
                 "policy_name": "Admins can view all profiles",
-                "policy_definition": "Command: SELECT | Roles: {public} | Using: (auth.uid() = '1934335c-96cb-4dc6-9023-1583f9ba3127'::uuid) | With Check: true"
+                "policy_definition": "Command: SELECT | Roles: public | Using: (auth.uid() = '1934335c-96cb-4dc6-9023-1583f9ba3127'::uuid) | With Check: "
             },
             {
                 "object_type": "POLICY",
@@ -399,7 +409,7 @@
                 "data_type": null,
                 "is_nullable": null,
                 "policy_name": "Users can insert their own profile",
-                "policy_definition": "Command: INSERT | Roles: {public} | Using: true | With Check: (auth.uid() = id)"
+                "policy_definition": "Command: INSERT | Roles: public | Using:  | With Check: (auth.uid() = id)"
             },
             {
                 "object_type": "POLICY",
@@ -409,7 +419,7 @@
                 "data_type": null,
                 "is_nullable": null,
                 "policy_name": "Users can update their own profile",
-                "policy_definition": "Command: UPDATE | Roles: {public} | Using: (auth.uid() = id) | With Check: (auth.uid() = id)"
+                "policy_definition": "Command: UPDATE | Roles: public | Using: (auth.uid() = id) | With Check: (auth.uid() = id)"
             },
             {
                 "object_type": "POLICY",
@@ -419,7 +429,7 @@
                 "data_type": null,
                 "is_nullable": null,
                 "policy_name": "Users can view their own profile",
-                "policy_definition": "Command: SELECT | Roles: {public} | Using: (auth.uid() = id) | With Check: true"
+                "policy_definition": "Command: SELECT | Roles: public | Using: (auth.uid() = id) | With Check: "
             },
             {
                 "object_type": "BUCKET",
