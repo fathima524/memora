@@ -233,14 +233,14 @@ export default function Flashcard() {
 
     // If they exit immediately without doing anything, or they haven't answered any NEW cards since last save/resume
     if (isManualExit && (newQuestionsInThisSitting === 0)) {
-      navigate("/dashboard");
+      navigate("/dashboard", { state: { sessionSaved: true } });
       return;
     }
 
     // Update Profile Stats
     const { data: profile } = await supabase.from("profiles").select("*").eq("id", user.id).single();
     if (!profile) {
-      navigate("/dashboard");
+      navigate("/dashboard", { state: { sessionSaved: isManualExit } });
       return;
     }
 
