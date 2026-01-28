@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { toast } from "sonner";
 
 function AdminSettings() {
   const navigate = useNavigate();
@@ -22,7 +23,7 @@ function AdminSettings() {
     setSaving(true);
     setTimeout(() => {
       setSaving(false);
-      alert("Admin settings saved successfully!");
+      toast.success("Admin settings saved successfully!");
       navigate("/admin");
     }, 1200);
   };

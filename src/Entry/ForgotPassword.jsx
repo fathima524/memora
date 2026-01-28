@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { supabase } from '../supabase/supabaseClient';
 import { useNavigate } from 'react-router-dom';
+import { toast } from "sonner";
 
 export default function ForgotPasswordPage() {
   const [email, setEmail] = useState('');
@@ -9,7 +10,7 @@ export default function ForgotPasswordPage() {
 
   const handleResetPassword = async () => {
     if (!email) {
-      alert('Please enter your email');
+      toast.error('Please enter your email');
       return;
     }
 
@@ -20,9 +21,9 @@ export default function ForgotPasswordPage() {
     });
 
     if (error) {
-      alert(error.message);
+      toast.error(error.message);
     } else {
-      alert('Check your email for the password reset link!');
+      toast.success('Check your email for the password reset link!');
       navigate('/login');
     }
 

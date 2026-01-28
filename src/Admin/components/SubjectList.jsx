@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
+import { toast } from "sonner";
 import { supabase } from "../../supabase/supabaseClient";
 import {
   BookOpen,
@@ -64,7 +65,7 @@ const SubjectList = () => {
 
       if (error) {
         console.error("Error deleting subject:", error.message);
-        alert("Error deleting subject");
+        toast.error("Error deleting subject");
       } else {
         const { error: flashError } = await supabase
           .from("flashcards")

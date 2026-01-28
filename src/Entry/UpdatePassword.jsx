@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '../supabase/supabaseClient';
 import { useSearchParams, useNavigate } from 'react-router-dom';
+import { toast } from "sonner";
 
 export default function UpdatePasswordPage() {
   const [password, setPassword] = useState('');
@@ -11,17 +12,17 @@ export default function UpdatePasswordPage() {
 
   const handleUpdatePassword = async () => {
     if (!password) {
-      alert('Please enter a new password');
+      toast.error('Please enter a new password');
       return;
     }
 
     if (password.length < 6) {
-      alert('Password must be at least 6 characters long');
+      toast.error('Password must be at least 6 characters long');
       return;
     }
 
     if (password !== confirmPassword) {
-      alert('Passwords do not match');
+      toast.error('Passwords do not match');
       return;
     }
 
@@ -34,9 +35,9 @@ export default function UpdatePasswordPage() {
     }, { accessToken: access_token });
 
     if (error) {
-      alert(error.message);
+      toast.error(error.message);
     } else {
-      alert('Password updated successfully! You can now login.');
+      toast.success('Password updated successfully! You can now login.');
       navigate('/login');
     }
 

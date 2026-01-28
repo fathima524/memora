@@ -222,47 +222,18 @@ export default function Flashcard() {
       return;
     }
 
-    const { data: profile } = await supabase.from("profiles").select("*").eq("id", user.id).single();
-    if (!profile) {
-      navigate("/dashboard", { state: { sessionSaved: isManualExit }, replace: true });
-      return;
-    }
-
-    const today = new Date().toDateString();
-    const lastDate = profile.last_study_date ? new Date(profile.last_study_date).toDateString() : null;
-
-    let newStreak = profile.current_streak || 0;
-    let newTodayQs = profile.questions_today || 0;
-
-    if (lastDate === today) {
-      newTodayQs += newQuestionsInThisSitting;
-    } else {
-      newTodayQs = newQuestionsInThisSitting;
-      const yesterday = new Date(Date.now() - 86400000).toDateString();
-      newStreak = lastDate === yesterday ? newStreak + 1 : 1;
-    }
-
-    let activity = profile.recent_activity || [];
     const subName = Array.isArray(subject)
       ? "Challenge Mode"
       : subjects.find(s => s.id === subject)?.name || (subject === "mixed" ? "Mixed Study" : "Study Session");
 
-    const newEntry = {
-      subject: subName,
-      questions: newQuestionsInThisSitting,
-      score: isManualExit ? 0 : score,
-      accuracy: Math.round((score / (totalAnsweredAtThisPoint || 1)) * 100),
-      timestamp: new Date().toISOString()
-    };
-    activity = [newEntry, ...activity].slice(0, 10);
+    const deltaScore = isManualExit ? 0 : Math.max(0, score - (resumeData?.score || 0));
 
-    await supabase.from("profiles").update({
-      current_streak: newStreak,
-      questions_today: newTodayQs,
-      last_study_date: new Date().toISOString(),
-      recent_activity: activity,
-      longest_streak: Math.max(newStreak, profile.longest_streak || 0)
-    }).eq("id", user.id);
+    await supabase.rpc('complete_study_session', {
+      p_user_id: user.id,
+      p_subject: subName,
+      p_questions: newQuestionsInThisSitting,
+      p_score: deltaScore
+    });
 
     navigate("/dashboard", {
       state: {

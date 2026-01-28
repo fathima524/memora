@@ -19,6 +19,8 @@ import {
   ShieldAlert
 } from 'lucide-react';
 
+import { toast } from "sonner";
+
 export default function ProfilePage() {
   const navigate = useNavigate();
   const [user, setUser] = useState(null);
@@ -69,20 +71,12 @@ export default function ProfilePage() {
 
       // Fetch all subjects with total question counts
       const { data: subData } = await supabase
-        .from("subjects")
-        .select("id, name")
+        .from("subjects_with_stats")
+        .select("id, name, total_questions")
         .order("name", { ascending: true });
 
       if (subData) {
-        // Fetch total question count for each subject
-        const subjectsWithCounts = await Promise.all(subData.map(async (s) => {
-          const { count } = await supabase
-            .from("flashcards")
-            .select("*", { count: 'exact', head: true })
-            .eq("subject_id", s.id);
-          return { name: s.name, total_questions: count || 0 };
-        }));
-        setAllSubjects(subjectsWithCounts);
+        setAllSubjects(subData);
       }
 
       setLoading(false);
@@ -105,9 +99,9 @@ export default function ProfilePage() {
       .eq("id", user.id);
 
     setSaving(false);
-    if (error) alert("Error updating profile.");
+    if (error) toast.error("Error updating profile.");
     else {
-      alert("Profile updated successfully!");
+      toast.success("Profile updated successfully!");
       navigate("/dashboard");
     }
   };

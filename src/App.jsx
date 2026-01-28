@@ -28,94 +28,98 @@ import AdminSettings from "./Admin/components/AdminSettings";
 
 // Protected Route component
 import ProtectedRoute from "./components/ProtectedRoute";
+import { Toaster } from "sonner";
 
 function App() {
   return (
-    <Routes>
-      {/* User-facing routes */}
-      <Route path="/" element={<Welcome />} />
-      <Route path="/login" element={<AuthPage type="login" />} />
-      <Route path="/signup" element={<AuthPage type="signup" />} />
-      <Route path="/forgot-password" element={<ForgotPasswordPage />} />
-      <Route path="/update-password" element={<UpdatePasswordPage />} />
-      <Route path="/complete-profile" element={<CompleteProfile />} />
-      <Route path="/pricing" element={<Pricing />} />
-      <Route path="/payment-checkout" element={<PaymentCheckout />} />
-      <Route path="/thanks" element={<Thanks />} />
+    <>
+      <Toaster position="top-center" richColors />
+      <Routes>
+        {/* User-facing routes */}
+        <Route path="/" element={<Welcome />} />
+        <Route path="/login" element={<AuthPage type="login" />} />
+        <Route path="/signup" element={<AuthPage type="signup" />} />
+        <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+        <Route path="/update-password" element={<UpdatePasswordPage />} />
+        <Route path="/complete-profile" element={<CompleteProfile />} />
+        <Route path="/pricing" element={<Pricing />} />
+        <Route path="/payment-checkout" element={<PaymentCheckout />} />
+        <Route path="/thanks" element={<Thanks />} />
 
-      <Route path="/dashboard" element={
-        <ProtectedRoute>
-          <Dashboard />
-        </ProtectedRoute>
-      } />
-      <Route path="/profilepage" element={
-        <ProtectedRoute>
-          <ProfilePage />
-        </ProtectedRoute>
-      } />
-      <Route path="/flashcard" element={
-        <ProtectedRoute>
-          <Flashcard />
-        </ProtectedRoute>
-      } />
-      <Route path="/streaks" element={
-        <ProtectedRoute>
-          <StreaksPage />
-        </ProtectedRoute>
-      } />
+        <Route path="/dashboard" element={
+          <ProtectedRoute>
+            <Dashboard />
+          </ProtectedRoute>
+        } />
+        <Route path="/profilepage" element={
+          <ProtectedRoute>
+            <ProfilePage />
+          </ProtectedRoute>
+        } />
+        <Route path="/flashcard" element={
+          <ProtectedRoute>
+            <Flashcard />
+          </ProtectedRoute>
+        } />
+        <Route path="/streaks" element={
+          <ProtectedRoute>
+            <StreaksPage />
+          </ProtectedRoute>
+        } />
 
-      {/* Admin routes */}
-      <Route path="/admin" element={
-        <ProtectedRoute requiredRole="admin">
-          <AdminDashboard />
-        </ProtectedRoute>
-      } />
-      <Route path="/admin/activeusers" element={
-        <ProtectedRoute requiredRole="admin">
-          <ActiveUsers />
-        </ProtectedRoute>
-      } />
-      <Route path="/admin/adminsettings" element={
-        <ProtectedRoute requiredRole="admin">
-          <AdminSettings />
-        </ProtectedRoute>
-      } />
-      <Route path="/admin/users" element={
-        <ProtectedRoute requiredRole="admin">
-          <UsersPage />
-        </ProtectedRoute>
-      } />
-      <Route path="/admin/subjects" element={
-        <ProtectedRoute requiredRole="admin">
-          <SubjectList />
-        </ProtectedRoute>
-      } />
-      <Route path="/admin/subjects/add" element={
-        <ProtectedRoute requiredRole="admin">
-          <SubjectForm />
-        </ProtectedRoute>
-      } />
-      <Route path="/admin/subjects/edit/:subjectId" element={
-        <ProtectedRoute requiredRole="admin">
-          <SubjectForm />
-        </ProtectedRoute>
-      } />
-      <Route path="/admin/subjects/:id/questions" element={
-        <ProtectedRoute requiredRole="admin">
-          <QuestionList />
-        </ProtectedRoute>
-      } />
-      <Route path="/admin/subjects/:id/questions/add" element={
-        <ProtectedRoute requiredRole="admin">
-          <QuestionForm />
-        </ProtectedRoute>
-      } />
-      <Route path="/admin/subjects/:id/questions/edit/:qid" element={
-        <ProtectedRoute requiredRole="admin">
-          <QuestionForm />
-        </ProtectedRoute>
-      } />
-    </Routes>
+        {/* Admin routes */}
+        <Route path="/admin" element={
+          <ProtectedRoute requiredRole="admin">
+            <AdminDashboard />
+          </ProtectedRoute>
+        } />
+        <Route path="/admin/activeusers" element={
+          <ProtectedRoute requiredRole="admin">
+            <ActiveUsers />
+          </ProtectedRoute>
+        } />
+        <Route path="/admin/adminsettings" element={
+          <ProtectedRoute requiredRole="admin">
+            <AdminSettings />
+          </ProtectedRoute>
+        } />
+        <Route path="/admin/users" element={
+          <ProtectedRoute requiredRole="admin">
+            <UsersPage />
+          </ProtectedRoute>
+        } />
+        <Route path="/admin/subjects" element={
+          <ProtectedRoute requiredRole="admin">
+            <SubjectList />
+          </ProtectedRoute>
+        } />
+        <Route path="/admin/subjects/add" element={
+          <ProtectedRoute requiredRole="admin">
+            <SubjectForm />
+          </ProtectedRoute>
+        } />
+        <Route path="/admin/subjects/edit/:subjectId" element={
+          <ProtectedRoute requiredRole="admin">
+            <SubjectForm />
+          </ProtectedRoute>
+        } />
+        <Route path="/admin/subjects/:id/questions" element={
+          <ProtectedRoute requiredRole="admin">
+            <QuestionList />
+          </ProtectedRoute>
+        } />
+        <Route path="/admin/subjects/:id/questions/add" element={
+          <ProtectedRoute requiredRole="admin">
+            <QuestionForm />
+          </ProtectedRoute>
+        } />
+        <Route path="/admin/subjects/:id/questions/edit/:qid" element={
+          <ProtectedRoute requiredRole="admin">
+            <QuestionForm />
+          </ProtectedRoute>
+        } />
+      </Routes>
+    </>
   );
 }
 

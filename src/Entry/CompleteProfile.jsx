@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "../supabase/supabaseClient";
+import { toast } from "sonner";
 
 export default function CompleteProfile() {
   const [name, setName] = useState('');
@@ -53,7 +54,7 @@ export default function CompleteProfile() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!name.trim() || !year) {
-      alert("Please complete all fields!");
+      toast.error("Please complete all fields!");
       return;
     }
     setLoading(true);
@@ -79,7 +80,7 @@ export default function CompleteProfile() {
       if (profileData?.role === 'admin') navigate("/admin");
       else navigate("/dashboard");
     } catch (error) {
-      alert('Error saving profile. Please try again.');
+      toast.error('Error saving profile. Please try again.');
     } finally {
       setLoading(false);
     }

@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link, useParams } from "react-router-dom";
+import { toast } from "sonner";
 import { supabase } from "../../supabase/supabaseClient";
 import {
   BookOpen,
@@ -59,7 +60,7 @@ const QuestionList = () => {
 
     if (error) {
       console.error("Error deleting question:", error.message);
-      alert("Error deleting question");
+      toast.error("Error deleting question");
     } else {
       fetchQuestions(); // Refresh list
     }

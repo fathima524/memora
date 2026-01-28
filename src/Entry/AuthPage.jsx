@@ -3,6 +3,7 @@ import { useNavigate, Link } from 'react-router-dom';
 import { loginWithEmail, signUpWithEmail, signInWithGoogle } from '../supabase/auth';
 import { supabase } from '../supabase/supabaseClient';
 import { Mail, Lock, ArrowRight, Chrome, CheckCircle2, Star, ShieldCheck, Sparkles, ArrowLeft } from 'lucide-react';
+import { toast } from "sonner";
 
 export default function AuthPage({ type = 'login' }) {
   const [email, setEmail] = useState('');
@@ -60,7 +61,7 @@ export default function AuthPage({ type = 'login' }) {
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!email || !password) {
-      alert('Please fill in all fields');
+      toast.error('Please fill in all fields');
       return;
     }
 
@@ -79,11 +80,11 @@ export default function AuthPage({ type = 'login' }) {
       } else {
         const { error } = await signUpWithEmail(email, password, 'student');
         if (error) throw error;
-        alert('Check your email for verification!');
+        toast.success('Check your email for verification!');
         navigate('/login');
       }
     } catch (error) {
-      alert(error.message);
+      toast.error(error.message);
     } finally {
       setLoading(false);
     }
@@ -95,7 +96,7 @@ export default function AuthPage({ type = 'login' }) {
       const { error } = await signInWithGoogle();
       if (error) throw error;
     } catch (error) {
-      alert(error.message);
+      toast.error(error.message);
       setLoading(false);
     }
   };

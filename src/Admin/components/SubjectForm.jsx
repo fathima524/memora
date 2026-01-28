@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { useNavigate, useParams, Link } from "react-router-dom";
+import { toast } from "sonner";
 import { supabase } from "../../supabase/supabaseClient";
 import {
   Save,
@@ -30,7 +31,7 @@ const SubjectForm = () => {
 
         if (error) {
           console.error("Error fetching subject:", error.message);
-          alert("Subject not found");
+          toast.error("Subject not found");
           navigate("/admin/subjects");
         } else {
           setName(data.name);
@@ -66,7 +67,7 @@ const SubjectForm = () => {
       navigate("/admin/subjects");
     } catch (err) {
       console.error(err);
-      alert("Error saving subject");
+      toast.error("Error saving subject");
     } finally {
       setLoading(false);
     }
@@ -96,7 +97,7 @@ const SubjectForm = () => {
         navigate("/admin/subjects");
       } catch (err) {
         console.error(err);
-        alert("Error deleting subject");
+        toast.error("Error deleting subject");
         setLoading(false);
       }
     }
