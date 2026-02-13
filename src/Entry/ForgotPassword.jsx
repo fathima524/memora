@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { supabase } from '../supabase/supabaseClient';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
+import { Mail, ArrowRight, ArrowLeft, Sparkles, ShieldCheck } from 'lucide-react';
 import { toast } from "sonner";
 
 export default function ForgotPasswordPage() {
@@ -8,7 +9,8 @@ export default function ForgotPasswordPage() {
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
 
-  const handleResetPassword = async () => {
+  const handleResetPassword = async (e) => {
+    e.preventDefault();
     if (!email) {
       toast.error('Please enter your email');
       return;
@@ -16,416 +18,354 @@ export default function ForgotPasswordPage() {
 
     setLoading(true);
 
-    const { data, error } = await supabase.auth.resetPasswordForEmail(email, {
-      redirectTo: `${window.location.origin}/update-password`
-    });
+    try {
+      const { error } = await supabase.auth.resetPasswordForEmail(email, {
+        redirectTo: `${window.location.origin}/update-password`
+      });
 
-    if (error) {
-      toast.error(error.message);
-    } else {
-      toast.success('Check your email for the password reset link!');
-      navigate('/login');
+      if (error) {
+        toast.error(error.message);
+      } else {
+        toast.success('Check your email for the password reset link!');
+        navigate('/login');
+      }
+    } catch (error) {
+      toast.error('An unexpected error occurred');
+    } finally {
+      setLoading(false);
     }
-
-    setLoading(false);
   };
 
   return (
-    <div className="auth-page">
-      <div className="auth-box">
-        <h1 className="auth-title">Reset Password</h1>
+    <div className="auth-unified-wrapper">
+      <div className="mesh-gradient"></div>
 
-        <div className="auth-form">
-          <label>Email</label>
-          <input
-            type="email"
-            placeholder="Enter your email"
-            value={email}
-            onChange={e => setEmail(e.target.value)}
-            className="auth-input"
-          />
+      <div className="auth-main-card">
+        {/* Left Side: Brand Context */}
+        <div className="info-side">
+          <Link to="/" className="brand-logo">
+            <span className="emoji">🩺</span>
+            <span className="text">Memora</span>
+          </Link>
 
-          <button onClick={handleResetPassword} className="auth-button" disabled={loading}>
-            {loading ? 'Sending...' : 'Send Reset Email'}
-          </button>
+          <div className="hero-messages">
+            <h1>Master Medicine <br /><span>Better & Faster.</span></h1>
+            <p>The premium study platform for medical students. Built for clinical excellence.</p>
+          </div>
 
-          <p className="back-link" onClick={() => navigate('/login')}>
-            Back to Login
-          </p>
+          <div className="feature-checks">
+            <div className="check-item">
+              <Sparkles size={18} />
+              <span>Intelligent Spaced Repetition</span>
+            </div>
+            <div className="check-item">
+              <ShieldCheck size={18} />
+              <span>Verified High-Yield Content</span>
+            </div>
+          </div>
+        </div>
+
+        {/* Right Side: Action Form */}
+        <div className="form-side">
+          <div className="glass-form-card">
+            <button onClick={() => navigate('/login')} className="back-home-btn">
+              <ArrowLeft size={18} />
+              <span>Back to Login</span>
+            </button>
+
+            <div className="form-head">
+              <h2>Reset Password</h2>
+              <p>Enter your email to receive a recovery link</p>
+            </div>
+
+            <form onSubmit={handleResetPassword} className="unified-form">
+              <div className="field-group">
+                <label>Email Address</label>
+                <div className="input-wrap">
+                  <Mail size={18} className="icon" />
+                  <input
+                    type="email"
+                    placeholder="doctor@medical.edu"
+                    value={email}
+                    onChange={e => setEmail(e.target.value)}
+                    required
+                  />
+                </div>
+              </div>
+
+              <button type="submit" className="btn-primary" disabled={loading}>
+                {loading ? <div className="loader"></div> : (
+                  <>
+                    <span>Send Reset Link</span>
+                    <ArrowRight size={18} />
+                  </>
+                )}
+              </button>
+            </form>
+
+            <div className="switcher">
+              <p>
+                Remember your password?
+                <button onClick={() => navigate('/login')}>
+                  Log In
+                </button>
+              </p>
+            </div>
+          </div>
         </div>
       </div>
 
       <style>{`
-        * {
-          margin: 0;
-          padding: 0;
-          box-sizing: border-box;
-        }
+        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
 
-        body, html {
-          margin: 0;
-          padding: 0;
-          overflow-x: hidden;
-        }
-
-        .auth-page {
+        .auth-unified-wrapper {
           min-height: 100vh;
-          min-height: 100dvh;
           width: 100vw;
+          background: #0f172a;
           display: flex;
           align-items: center;
           justify-content: center;
-          font-family: "Inter", "Segoe UI", "Roboto", sans-serif;
-          background: linear-gradient(135deg, #3c4b5c 0%, #5a6b7a 40%, #8b9da9 70%, #e8eaec 100%);
-          background-attachment: fixed;
-          background-repeat: no-repeat;
-          background-size: cover;
-          padding: 20px;
-          margin: 0;
+          font-family: 'Plus Jakarta Sans', sans-serif;
           position: relative;
+          overflow: hidden;
+          padding: 2rem;
         }
 
-        .auth-box {
-          background: rgba(255, 255, 255, 0.95);
-          backdrop-filter: blur(10px);
-          border-radius: 20px;
-          padding: 50px;
+        .mesh-gradient {
+          position: absolute;
+          top: 0; left: 0; right: 0; bottom: 0;
+          background: 
+            radial-gradient(circle at 100% 0%, rgba(37, 99, 235, 0.15) 0%, transparent 40%),
+            radial-gradient(circle at 0% 100%, rgba(56, 189, 248, 0.1) 0%, transparent 40%),
+            radial-gradient(circle at 50% 50%, rgba(15, 23, 42, 1) 0%, rgba(15, 23, 42, 1) 100%);
+          z-index: 1;
+        }
+
+        .auth-main-card {
           width: 100%;
-          max-width: 400px;
-          box-shadow: 0 20px 40px rgba(60, 75, 92, 0.3), 0 8px 16px rgba(60, 75, 92, 0.2);
-          border: 1px solid rgba(255, 255, 255, 0.2);
-        }
-
-        .auth-title {
-          font-size: 28px;
-          font-weight: 700;
-          color: #3c4b5c;
-          text-align: center;
-          margin-bottom: 30px;
-          letter-spacing: -0.5px;
-          line-height: 1.2;
-        }
-
-        .auth-form {
+          max-width: 980px;
+          min-height: 600px;
+          background: rgba(30, 41, 59, 0.7);
+          backdrop-filter: blur(20px);
+          border: 1px solid rgba(255, 255, 255, 0.1);
+          border-radius: 36px;
           display: flex;
-          flex-direction: column;
-          gap: 20px;
-        }
-
-        .auth-form label {
-          font-size: 14px;
-          font-weight: 600;
-          color: #3c4b5c;
-          margin-bottom: -15px;
-        }
-
-        .auth-input {
-          width: 100%;
-          padding: 16px;
-          border: 2px solid #e8eaec;
-          border-radius: 12px;
-          font-size: 16px;
-          color: #3c4b5c;
-          background-color: rgba(255, 255, 255, 0.8);
-          outline: none;
-          transition: all 0.3s ease;
-          font-family: inherit;
-        }
-
-        .auth-input:focus {
-          border-color: #5a6b7a;
-          background-color: rgba(255, 255, 255, 1);
-          box-shadow: 0 0 0 3px rgba(90, 107, 122, 0.1);
-          transform: translateY(-1px);
-        }
-
-        .auth-input::placeholder {
-          color: #8b9da9;
-        }
-
-        .auth-button {
-          width: 100%;
-          padding: 16px;
-          background: linear-gradient(135deg, #3c4b5c 0%, #5a6b7a 100%);
-          color: white;
-          border: none;
-          border-radius: 12px;
-          font-size: 16px;
-          font-weight: 600;
-          cursor: pointer;
-          transition: all 0.3s ease;
-          font-family: inherit;
-          position: relative;
+          z-index: 10;
+          box-shadow: 0 40px 100px -20px rgba(0, 0, 0, 0.5);
           overflow: hidden;
         }
 
-        .auth-button:disabled {
-          opacity: 0.7;
-          cursor: not-allowed;
+        /* Left Side */
+        .info-side {
+          flex: 1;
+          padding: 4.5rem;
+          background: rgba(255, 255, 255, 0.02);
+          border-right: 1px solid rgba(255, 255, 255, 0.05);
+          display: flex;
+          flex-direction: column;
         }
 
-        .auth-button:hover:not(:disabled) {
-          background: linear-gradient(135deg, #2a3642 0%, #485460 100%);
-          transform: translateY(-2px);
-          box-shadow: 0 8px 20px rgba(60, 75, 92, 0.4);
-        }
-
-        .auth-button:active:not(:disabled) {
-          transform: translateY(0);
-        }
-
-        .back-link {
-          text-align: center;
-          color: #3182ce;
-          font-size: 14px;
-          font-weight: 500;
-          cursor: pointer;
+        .brand-logo {
+          display: flex;
+          align-items: center;
+          gap: 0.75rem;
           text-decoration: none;
-          transition: all 0.3s ease;
-          margin-top: 10px;
-          line-height: 1.5;
+          margin-bottom: 5rem;
         }
 
-        .back-link:hover {
-          color: #2c5aa0;
-          text-decoration: underline;
+        .emoji { font-size: 1.75rem; }
+        .text { font-size: 1.75rem; font-weight: 800; color: white; letter-spacing: -1px; }
+
+        .hero-messages h1 {
+          font-size: 2.75rem;
+          font-weight: 800;
+          color: white;
+          line-height: 1.1;
+          margin-bottom: 2rem;
+          letter-spacing: -1.5px;
         }
 
-        /* Responsive Design */
-        @media (max-width: 768px) {
-          .auth-page {
-            padding: 15px;
-          }
-          
-          .auth-box {
-            padding: 40px 30px;
-            max-width: calc(100vw - 30px);
-            border-radius: 18px;
-          }
-          
-          .auth-title {
-            font-size: 26px;
-            margin-bottom: 25px;
-          }
-          
-          .auth-form {
-            gap: 18px;
-          }
+        .hero-messages h1 span {
+          background: linear-gradient(to right, #38bdf8, #818cf8);
+          -webkit-background-clip: text;
+          -webkit-text-fill-color: transparent;
+        }
+
+        .hero-messages p {
+          color: #94a3b8;
+          font-size: 1.1rem;
+          line-height: 1.6;
+          margin-bottom: 3.5rem;
+          max-width: 320px;
+        }
+
+        .feature-checks {
+          display: flex;
+          flex-direction: column;
+          gap: 1.25rem;
+        }
+
+        .check-item {
+          display: flex;
+          align-items: center;
+          gap: 1rem;
+          color: #cbd5e1;
+          font-weight: 600;
+          font-size: 0.95rem;
+        }
+
+        .check-item svg { color: #38bdf8; }
+
+        /* Right Side / Form */
+        .form-side {
+          flex: 1.1;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          padding: 4rem;
+        }
+
+        .glass-form-card {
+          width: 100%;
+          max-width: 360px;
+        }
+
+        .back-home-btn {
+          display: inline-flex;
+          align-items: center;
+          gap: 0.5rem;
+          background: transparent;
+          border: none;
+          color: #64748b;
+          font-weight: 600;
+          font-size: 0.9rem;
+          padding: 0;
+          margin-bottom: 2rem;
+          cursor: pointer;
+          transition: all 0.2s;
+          font-family: inherit;
+        }
+
+        .back-home-btn:hover {
+          color: #38bdf8;
+          transform: translateX(-4px);
+        }
+
+        .form-head { margin-bottom: 2.5rem; }
+        .form-head h2 { font-size: 2rem; font-weight: 800; color: white; margin-bottom: 0.5rem; letter-spacing: -1px; }
+        .form-head p { color: #94a3b8; font-size: 0.95rem; }
+
+        .unified-form { display: flex; flex-direction: column; gap: 1.5rem; }
+
+        .field-group label {
+          display: block;
+          font-size: 0.875rem;
+          font-weight: 700;
+          color: #cbd5e1;
+          margin-bottom: 0.75rem;
+        }
+
+        .input-wrap {
+          position: relative;
+          display: flex;
+          align-items: center;
+        }
+
+        .icon {
+          position: absolute;
+          left: 1.25rem;
+          color: #64748b;
+          transition: color 0.3s;
+        }
+
+        .input-wrap input {
+          width: 100%;
+          padding: 1rem 1.25rem 1rem 3.5rem;
+          background: rgba(15, 23, 42, 0.4);
+          border: 1px solid rgba(255, 255, 255, 0.1);
+          border-radius: 16px;
+          color: white;
+          font-family: inherit;
+          font-size: 1rem;
+          outline: none;
+          transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .input-wrap input:focus {
+          background: rgba(15, 23, 42, 0.6);
+          border-color: #2563eb;
+          box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.1);
+        }
+
+        .input-wrap input:focus + .icon {
+          color: #38bdf8;
+        }
+
+        .btn-primary {
+          margin-top: 1rem;
+          background: #2563eb;
+          color: white;
+          padding: 1.125rem;
+          border-radius: 16px;
+          border: none;
+          font-size: 1.1rem;
+          font-weight: 800;
+          cursor: pointer;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          gap: 0.75rem;
+          transition: all 0.2s;
+          box-shadow: 0 10px 20px -5px rgba(37, 99, 235, 0.4);
+        }
+
+        .btn-primary:hover:not(:disabled) {
+          background: #1d4ed8;
+          transform: translateY(-2px);
+          box-shadow: 0 20px 30px -5px rgba(37, 99, 235, 0.5);
+        }
+
+        .switcher {
+          margin-top: 2rem;
+          text-align: center;
+        }
+
+        .switcher p {
+          color: #94a3b8;
+          font-size: 0.9rem;
+        }
+
+        .switcher button {
+          background: none;
+          border: none;
+          color: #38bdf8;
+          font-weight: 800;
+          margin-left: 0.5rem;
+          cursor: pointer;
+          font-family: inherit;
+        }
+
+        .loader {
+          width: 20px;
+          height: 20px;
+          border: 3px solid rgba(255, 255, 255, 0.2);
+          border-top-color: white;
+          border-radius: 50%;
+          animation: spin 0.8s linear infinite;
+        }
+
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        @media (max-width: 960px) {
+          .info-side { display: none; }
+          .auth-main-card { max-width: 460px; min-height: auto; }
+          .form-side { padding: 3rem; }
         }
 
         @media (max-width: 480px) {
-          .auth-page {
-            padding: 10px;
-          }
-          
-          .auth-box {
-            padding: 35px 25px;
-            max-width: calc(100vw - 20px);
-            border-radius: 15px;
-          }
-          
-          .auth-title {
-            font-size: 24px;
-            margin-bottom: 20px;
-          }
-          
-          .auth-form {
-            gap: 16px;
-          }
-          
-          .auth-input {
-            padding: 14px;
-            font-size: 16px;
-          }
-          
-          .auth-button {
-            padding: 14px;
-            font-size: 16px;
-          }
-          
-          .back-link {
-            font-size: 13px;
-          }
-        }
-
-        @media (max-width: 375px) {
-          .auth-page {
-            padding: 8px;
-          }
-          
-          .auth-box {
-            padding: 30px 20px;
-            max-width: calc(100vw - 16px);
-            border-radius: 12px;
-          }
-          
-          .auth-title {
-            font-size: 22px;
-            margin-bottom: 18px;
-          }
-          
-          .auth-form {
-            gap: 15px;
-          }
-          
-          .auth-form label {
-            font-size: 13px;
-            margin-bottom: -12px;
-          }
-          
-          .auth-input {
-            padding: 12px;
-            font-size: 15px;
-          }
-          
-          .auth-button {
-            padding: 12px;
-            font-size: 15px;
-          }
-        }
-
-        @media (max-width: 320px) {
-          .auth-page {
-            padding: 5px;
-          }
-          
-          .auth-box {
-            padding: 25px 15px;
-            max-width: calc(100vw - 10px);
-            border-radius: 10px;
-          }
-          
-          .auth-title {
-            font-size: 20px;
-            margin-bottom: 15px;
-          }
-          
-          .auth-form {
-            gap: 14px;
-          }
-          
-          .auth-form label {
-            font-size: 12px;
-            margin-bottom: -10px;
-          }
-          
-          .auth-input {
-            padding: 10px;
-            font-size: 14px;
-          }
-          
-          .auth-button {
-            padding: 10px;
-            font-size: 14px;
-          }
-          
-          .back-link {
-            font-size: 12px;
-          }
-        }
-
-        /* Ultra-wide screens */
-        @media (min-width: 1200px) {
-          .auth-box {
-            max-width: 450px;
-            padding: 60px;
-          }
-          
-          .auth-title {
-            font-size: 30px;
-            margin-bottom: 35px;
-          }
-          
-          .auth-form {
-            gap: 22px;
-          }
-          
-          .auth-input {
-            padding: 18px;
-            font-size: 17px;
-          }
-          
-          .auth-button {
-            padding: 18px;
-            font-size: 17px;
-          }
-        }
-
-        /* Landscape orientation on mobile */
-        @media (max-height: 500px) and (orientation: landscape) {
-          .auth-page {
-            padding: 10px;
-          }
-          
-          .auth-box {
-            padding: 25px 35px;
-            max-width: 90vw;
-            max-height: 95vh;
-            overflow-y: auto;
-          }
-          
-          .auth-title {
-            font-size: 22px;
-            margin-bottom: 15px;
-          }
-          
-          .auth-form {
-            gap: 12px;
-          }
-          
-          .auth-input {
-            padding: 12px;
-          }
-          
-          .auth-button {
-            padding: 12px;
-          }
-        }
-
-        /* High DPI displays */
-        @media (-webkit-min-device-pixel-ratio: 2), (min-resolution: 2dppx) {
-          .auth-box {
-            border: 0.5px solid rgba(255, 255, 255, 0.3);
-          }
-          
-          .auth-input {
-            border-width: 1px;
-          }
-        }
-
-        /* Reduce motion for accessibility */
-        @media (prefers-reduced-motion: reduce) {
-          .auth-input, .auth-button, .back-link {
-            transition: none;
-          }
-          
-          .auth-button:hover:not(:disabled) {
-            transform: none;
-          }
-          
-          .auth-input:focus {
-            transform: none;
-          }
-        }
-
-        /* Dark mode support */
-        @media (prefers-color-scheme: dark) {
-          .auth-box {
-            background: rgba(255, 255, 255, 0.98);
-            backdrop-filter: blur(15px);
-          }
-        }
-
-        /* Focus indicators for keyboard navigation */
-        .auth-button:focus-visible {
-          outline: 2px solid #5a6b7a;
-          outline-offset: 2px;
-        }
-
-        .back-link:focus-visible {
-          outline: 2px solid #5a6b7a;
-          outline-offset: 1px;
-          border-radius: 2px;
+          .auth-unified-wrapper { padding: 1rem; }
+          .auth-main-card { border: none; box-shadow: none; background: rgba(15, 23, 42, 0.95); border-radius: 28px; }
+          .form-side { padding: 2rem 1.5rem; }
         }
       `}</style>
     </div>
